@@ -20,11 +20,15 @@ Three consequences the project has to live with:
   with opaque publisher identifiers. The province name is the run of characters between the
   title's opening bracket and the words "financial operation report", and it is in Chinese.
 
-That last point leaves a genuine open question, and this module does not paper over it: it
-extracts the Chinese province name mechanically and stops there.
-:func:`map_province_names` needs a Chinese-to-canonical mapping supplied by the caller, and
-the project does not have one that was read from a source. Building it from the fetched link
-text is a one-off task recorded in the README.
+That last point used to stop the module cold, because no Chinese-to-canonical table had been
+read from any source. One is now recorded as data in ``data/provinces.yaml``: every canonical
+province, the English spellings the repository attests, the one Chinese name the registry
+quotes verbatim, and the units among these files that are not provinces.
+:func:`load_province_mapping` reads that file and validates it against
+:mod:`china.clean.provinces`, and :func:`map_province_names` refuses any published name the
+table does not know. The Chinese column is deliberately thin: a Chinese name enters it only
+when the repository itself attests one, so completing it from a fetched year page remains
+the one-off task recorded in the README.
 """
 
 from __future__ import annotations
@@ -33,13 +37,17 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 from china.clean._html import decode_html, iter_anchors
+from china.clean.provinces import BOUNDARY_CHANGES, PROVINCES, SUBPROVINCIAL_UNITS
 
 __all__ = [
     "BALANCE_COLUMNS",
+    "PROVINCES_YAML",
     "SUMMARY_COLUMNS",
     "extract_pdf_text",
+    "load_province_mapping",
     "map_province_names",
     "parse_loan_balances",
     "parse_summary_links",
@@ -91,6 +99,11 @@ SUMMARY_COLUMNS: tuple[str, ...] = (
     "province_zh",
     "is_summary",
 )
+
+#: The recorded published-name table :func:`map_province_names` applies by default. Same
+#: convention as ``DATA_DIR`` in ``china.acquire.__main__``: the project directory is three
+#: parents up from this file.
+PROVINCES_YAML = Path(__file__).resolve().parents[3] / "data" / "provinces.yaml"
 
 
 def extract_pdf_text(path: Path) -> str:
@@ -221,38 +234,198 @@ def parse_summary_links(year_html: bytes | str) -> pd.DataFrame:
     return frame
 
 
-def map_province_names(names: pd.Series, mapping: dict[str, str]) -> pd.Series:
-    """Map published Chinese province names onto the project's canonical names.
+def load_province_mapping(path: Path | None = None) -> dict[str, str]:
+    """Load the recorded published-name table from ``data/provinces.yaml``.
 
-    The mapping is a required argument and has **no default**. The project has no
-    Chinese-to-English province table that was read from a source, and writing one from
-    memory would put thirty-one unverified strings at the join between the credit series and
-    everything else. Build it once from the ``province_zh`` column of a real fetched year
-    page, record it, and pass it in.
+    The file is validated against :mod:`china.clean.provinces` on every load, so the file
+    and the code cannot drift apart silently:
+
+    * the canonical names must be exactly the 31 of :data:`china.clean.provinces.PROVINCES`;
+    * every boundary change recorded in :data:`china.clean.provinces.BOUNDARY_CHANGES` must
+      appear in the file with the same year and parent, and no others;
+    * every sub-provincial unit recorded in
+      :data:`china.clean.provinces.SUBPROVINCIAL_UNITS` must appear under ``not_provinces``
+      with the same parent, and no others.
+
+    Parameters
+    ----------
+    path : Path, optional
+        Override the table's location, :data:`PROVINCES_YAML`. Tests use this to point at
+        a table deliberately written wrong.
+
+    Returns
+    -------
+    dict of str to str
+        Published name to target. Every key matches exactly; there is no fuzzy matching.
+        A target is either a canonical name from :data:`china.clean.provinces.PROVINCES` or
+        an explicit not-a-province label naming the unit and its parent.
+
+    Raises
+    ------
+    FileNotFoundError
+        If ``path`` does not exist.
+    ValueError
+        If the file is malformed, disagrees with :mod:`china.clean.provinces`, or gives one
+        published spelling two targets.
+    """
+    if path is None:
+        path = PROVINCES_YAML
+    if not path.exists():
+        raise FileNotFoundError(
+            f"the recorded province table {path} does not exist; it ships with the project "
+            "under data/ and map_province_names needs it"
+        )
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(document, dict) or not isinstance(document.get("provinces"), list):
+        raise ValueError(f"{path} must be a mapping carrying a 'provinces' list")
+
+    table: dict[str, str] = {}
+
+    def add(spelling: str, target: str) -> None:
+        if not spelling:
+            raise ValueError(f"{path} records an empty published name")
+        if spelling in table:
+            raise ValueError(
+                f"{path} gives the published name {spelling!r} two targets: "
+                f"{table[spelling]!r} and {target!r}"
+            )
+        table[spelling] = target
+
+    separations: dict[str, tuple[int, str]] = {}
+    for row in document["provinces"]:
+        if not isinstance(row, dict) or "canonical" not in row:
+            raise ValueError(
+                f"{path} has a provinces entry that is not a mapping with a 'canonical' name"
+            )
+        canonical = row["canonical"]
+        if not isinstance(canonical, str) or canonical not in PROVINCES:
+            raise ValueError(
+                f"{path} maps onto {canonical!r}, which is not one of the 31 canonical names "
+                "in china.clean.provinces.PROVINCES"
+            )
+        for field in ("english", "chinese"):
+            spellings = row.get(field) or []
+            if not isinstance(spellings, list) or not all(
+                isinstance(s, str) and s for s in spellings
+            ):
+                raise ValueError(f"{path} entry {canonical!r} carries a malformed {field!r} list")
+        add(canonical, canonical)
+        for spelling in row.get("english") or []:
+            add(spelling, canonical)
+        for spelling in row.get("chinese") or []:
+            add(spelling, canonical)
+        if "separated" in row:
+            record = row["separated"]
+            if (
+                not isinstance(record, dict)
+                or not isinstance(record.get("year"), int)
+                or record.get("from") not in PROVINCES
+            ):
+                raise ValueError(
+                    f"{path} entry {canonical!r} carries a 'separated' record that is not a "
+                    "mapping of a 'from' canonical province and an integer 'year'"
+                )
+            separations[canonical] = (record["year"], record["from"])
+
+    recorded_canonicals = {row["canonical"] for row in document["provinces"]}
+    missing = [p for p in PROVINCES if p not in recorded_canonicals]
+    if missing:
+        raise ValueError(
+            f"{path} has no entry for {missing}, which the canonical list in "
+            "china.clean.provinces carries; a province outside the table would raise at "
+            "mapping time"
+        )
+
+    recorded = {(b.created, b.year, b.from_parent) for b in BOUNDARY_CHANGES}
+    in_file = {(name, year, parent) for name, (year, parent) in separations.items()}
+    if in_file != recorded:
+        raise ValueError(
+            f"{path} records the boundary changes {sorted(in_file)} but "
+            f"china.clean.provinces records {sorted(recorded)}; the two must agree, because "
+            "a series spanning a separation is two series"
+        )
+
+    rows = document.get("not_provinces")
+    if not isinstance(rows, list):
+        raise ValueError(f"{path} must carry a 'not_provinces' list")
+    units: set[tuple[str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict) or "name" not in row or "parent" not in row:
+            raise ValueError(f"{path} has a not_provinces entry without a 'name' and a 'parent'")
+        if row["parent"] not in PROVINCES:
+            raise ValueError(
+                f"{path} gives the sub-provincial unit {row['name']!r} the parent "
+                f"{row['parent']!r}, which is not a canonical province"
+            )
+        units.add((row["name"], row["parent"]))
+        add(
+            row["name"],
+            f"{row['name']} (sub-provincial unit of {row['parent']}, not a province)",
+        )
+    recorded_units = {(u.name, u.parent) for u in SUBPROVINCIAL_UNITS}
+    if units != recorded_units:
+        raise ValueError(
+            f"{path} and china.clean.provinces disagree about the sub-provincial units: the "
+            f"file has {sorted(units)}, the code records {sorted(recorded_units)}"
+        )
+    return table
+
+
+def map_province_names(names: pd.Series, mapping: dict[str, str] | None = None) -> pd.Series:
+    """Map published names onto the project's canonical names.
+
+    Two ways to call it, with deliberately different behaviour for a name the mapping does
+    not know:
+
+    * **No mapping.** The recorded table ``data/provinces.yaml`` is loaded through
+      :func:`load_province_mapping` and applied strictly. That table is validated against
+      the canonical province list on every load, so it is complete by construction, and a
+      published name it does not know is not a row to tolerate: it raises, naming the name.
+      A silent drop here would quietly shrink the panel and nobody would notice which
+      province went missing.
+    * **An explicit mapping.** Exactly that mapping is applied, and it may be partial: the
+      loader tests map synthetic fixture names. An unmatched name stays ``<NA>``, where it
+      is visible, rather than becoming a guess.
+
+    Either way there is no fuzzy matching. A name either resolves exactly or it raises.
 
     Parameters
     ----------
     names : pandas.Series
         Published names, e.g. the ``province_zh`` column of :func:`parse_summary_links`.
-    mapping : dict of str to str
-        Published name to canonical name from :data:`china.clean.provinces.PROVINCES`.
+    mapping : dict of str to str, optional
+        Published name to canonical name. Omit it to use the recorded table.
 
     Returns
     -------
     pandas.Series
-        Canonical names, with ``<NA>`` wherever the mapping has no entry. Unmapped is left
-        visible on purpose: Shenzhen appears among these files and is not a province.
+        Canonical names, as pandas string dtype.
 
     Raises
     ------
     ValueError
-        If ``mapping`` is empty.
+        If an explicit mapping is empty, or if no mapping was given and a published name is
+        not in the recorded table.
     """
+    if mapping is None:
+        mapping = load_province_mapping()
+        strict = True
+    else:
+        strict = False
     if not mapping:
         raise ValueError(
-            "map_province_names needs a Chinese-to-canonical mapping; build it from the "
-            "province_zh column of a fetched report page and record it in the data dictionary"
+            "map_province_names was given an empty Chinese-to-canonical mapping; use "
+            "load_province_mapping() to read the recorded table data/provinces.yaml"
         )
+    if strict:
+        unknown = sorted({str(v) for v in names if pd.notna(v) and str(v) not in mapping})
+        if unknown:
+            raise ValueError(
+                f"{len(unknown)} published names are not in the recorded province table "
+                f"{PROVINCES_YAML}: {unknown[:5]}. A row that cannot be stamped with a "
+                "province must not leave the panel silently; add the name to "
+                "data/provinces.yaml with its source, or fix the extraction that produced it"
+            )
     return names.map(mapping).astype("string")
 
 
