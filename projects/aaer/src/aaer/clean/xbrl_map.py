@@ -19,7 +19,7 @@ observed in a response actually fetched from the SEC during scaffolding:
 ``AccountsReceivableNetCurrent``, in the ``companyfacts`` sample for CIK 0000320193 (registry
 entry ``sec_companyfacts_api_sample``; ``AccountsPayableCurrent`` was also observed, in the API
 documentation's endpoint example, but it is not one of the twelve items). Every other element
-name here comes from the implementer's knowledge of the us-gaap taxonomy and **has not been
+name here comes from the contributor's knowledge of the us-gaap taxonomy and **has not been
 checked against a real filing in this project**. Each entry carries
 :attr:`ItemMapping.confirmed` and a note saying what specifically is doubtful.
 
@@ -266,7 +266,7 @@ BENEISH_TAG_MAP: Mapping[str, ItemMapping] = {
 #: Items whose element name was observed in a fetched SEC response.
 CONFIRMED_ITEMS: tuple[str, ...] = tuple(k for k, v in BENEISH_TAG_MAP.items() if v.confirmed)
 
-#: Items whose mapping is the implementer's assumption and needs checking against a real filing.
+#: Items whose mapping is the contributor's assumption and needs checking against a real filing.
 UNCONFIRMED_ITEMS: tuple[str, ...] = tuple(k for k, v in BENEISH_TAG_MAP.items() if not v.confirmed)
 
 

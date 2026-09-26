@@ -9,7 +9,7 @@ Read the honesty summary first.
 
 > **Eleven of the twelve XBRL mappings below are unconfirmed.** Exactly one us-gaap element
 > name used by this project was observed in a response actually fetched from the SEC during
-> scaffolding. Every other element name is the implementer's knowledge of the taxonomy written
+> scaffolding. Every other element name is the contributor's knowledge of the taxonomy written
 > down, and has not been checked against a real filing. No number computed from the SEC path
 > means anything until they are checked, and checking them takes one downloaded quarter and one
 > function call.
@@ -47,7 +47,7 @@ Defined in `aaer.clean.xbrl_map.BENEISH_TAG_MAP`, one entry per item, tags in pr
 (first one present for a filing wins). `mapping_table()` returns the same content as a frame.
 
 **Legend.** *Seen* = the element name appeared in a response fetched from the SEC and recorded
-in `data/SOURCES.yaml`. *Assumed* = the implementer's knowledge of the us-gaap taxonomy,
+in `data/SOURCES.yaml`. *Assumed* = the contributor's knowledge of the us-gaap taxonomy,
 unverified in this project.
 
 | Item | Candidate tags, in priority order | Status | The specific doubt |

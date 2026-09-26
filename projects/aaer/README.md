@@ -107,7 +107,7 @@ This and six other confounds are in [docs/known_traps.md](docs/known_traps.md).
 `aaer.clean.xbrl_map` maps us-gaap tags to the twelve items the Beneish indices need.
 **Eleven of the twelve mappings are unconfirmed.** Exactly one element name in the table -
 `AccountsReceivableNetCurrent` - was observed in a response actually fetched from the SEC; the
-rest are the implementer's knowledge of the taxonomy, written down and flagged as assumptions.
+rest are the contributor's knowledge of the taxonomy, written down and flagged as assumptions.
 Three selection rules (the meaning of `qtrs`, the `ddate == period` convention, and the
 exclusion of filer extension tags) are unconfirmed too.
 

@@ -229,7 +229,7 @@ Six entries have no acquirer. **Five are free and reachable** and are left alone
    dataset and obtain Compustat. The three are not exclusive, and the choice belongs to the
    owner, not to the code.
 3. **Confirm the XBRL tag mapping.** Eleven of the twelve mappings in `aaer.clean.xbrl_map` are
-   the implementer's assumption. One quarter of acquired data and
+   the contributor's assumption. One quarter of acquired data and
    `aaer.clean.xbrl_map.tag_frequency` settles most of them in an afternoon. Until then, no
    number computed from the SEC path means anything. See `docs/data_dictionary.md`.
 4. **Check whether CMU's WRDS subscription includes Compustat Fundamentals Annual.** One login

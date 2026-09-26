@@ -803,7 +803,7 @@ requires-dist = [
 
 [[package]]
 name = "forensics-core"
-version = "0.1.0"
+version = "0.3.0"
 source = { editable = "packages/forensics_core" }
 dependencies = [
     { name = "httpx" },
@@ -815,10 +815,16 @@ dependencies = [
     { name = "scipy" },
 ]
 
+[package.optional-dependencies]
+parquet = [
+    { name = "pyarrow" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "hypothesis" },
     { name = "pre-commit" },
+    { name = "pyarrow" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -829,16 +835,19 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.1" },
+    { name = "pyarrow", marker = "extra == 'parquet'", specifier = ">=14.0" },
     { name = "pydantic", specifier = ">=2.6" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "scikit-learn", specifier = ">=1.4" },
     { name = "scipy", specifier = ">=1.11" },
 ]
+provides-extras = ["parquet"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "hypothesis", specifier = ">=6.100" },
     { name = "pre-commit", specifier = ">=3.7" },
+    { name = "pyarrow", specifier = ">=14.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = ">=0.6" },

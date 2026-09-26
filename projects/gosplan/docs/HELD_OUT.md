@@ -112,7 +112,7 @@ anchor is a violation of `CONTRACT.md` rule 5.
 
 ## After G3
 
-`held_out_mask` still identifies the anchor rows once the seal is lifted, and must: WO-510 needs
+`held_out_mask` still identifies the anchor rows once the seal is lifted, and must: a later task needs
 exactly that mask to build the `anchor_holdout` split, where detectors are fitted without ever
 seeing the anchor and then asked to rank it. The seal hides the anchor; it does not forget where
 it is.
