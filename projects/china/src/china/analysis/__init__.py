@@ -13,8 +13,9 @@ The five tests, and why each one is here
 ----------------------------------------
 :mod:`china.analysis.gap`
     The provincial-sum minus national gap. The project's headline quantity, and the one that
-    has to be decomposed into its mechanical part (cross-province double counting, different
-    deflators, boundary changes) before any residual can be called misreporting.
+    has to be decomposed into its mechanical part (cross-province double counting, the
+    centre's informal-economy adjustment, different deflators, boundary changes) before any
+    residual can be called misreporting.
 :mod:`china.analysis.reform`
     The unified-accounting reform as a natural experiment. The break is at the **2019 data
     year**, verified from the bureau's own question-and-answer page, and not at the June 2017

@@ -8,6 +8,12 @@ applies adjustments for the informal economy that provinces do not. **Estimate t
 component before attributing any residual to misreporting.** A reconciliation that treats the
 whole gap as gross error is wrong by construction.
 
+These terms do not all point the same way. Double counting inflates the provincial sum and
+widens the gap; the informal-economy adjustment inflates the national total and narrows it.
+So an undecomposed residual is not an upper bound on misreporting, and removing double
+counting alone understates it. Report the residual as a gap; state a bound only with the
+sign assumption for each omitted term printed beside it.
+
 ## 2. Boundary changes and rebasing create level shifts
 
 Chongqing separated from Sichuan in 1997; Hainan from Guangdong in 1988; periodic economic

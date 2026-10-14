@@ -6,16 +6,30 @@ deputy head gave that gap as the reason for the accounting reform, saying the tw
 far apart".
 
 The gap is not evidence of misreporting on its own, and treating it as such is the first way
-to get this project wrong. Three mechanical components have to be estimated and removed
-first, per ``docs/known_traps.md``:
+to get this project wrong. Four mechanical components have to be dealt with first, per
+``docs/known_traps.md``:
 
 1. **Cross-province double counting.** Activity claimed by both the producing province and
-   the head-office province.
-2. **Different deflators.** Provinces and the centre deflate differently, so the nominal gap
-   and the real-growth gap are different quantities and must never be mixed.
-3. **Boundary changes and census rebasing.** Chongqing separating from Sichuan in 1997,
+   the head-office province. Non-negative: it makes the gap larger.
+2. **The informal-economy adjustment.** The centre adjusts the national figure for the
+   informal economy and provinces do not. Non-negative, but it raises the national total, so
+   it makes the gap *smaller*: it pulls the other way from double counting.
+3. **Different deflators.** Provinces and the centre deflate differently, so the nominal gap
+   and the real-growth gap are different quantities and must never be mixed. This term is in
+   the real-growth gap only, and its sign is unknown.
+4. **Boundary changes and census rebasing.** Chongqing separating from Sichuan in 1997,
    Hainan from Guangdong in 1988, and the 2004, 2008, 2013 and 2018 economic censuses each
-   put a level shift in the series that looks exactly like manipulation.
+   put a level shift in the series that looks exactly like manipulation. These are handled
+   through the break table, by testing around breaks, not as a term subtracted from the gap.
+
+**The residual is a gap, not a bound.** In nominal levels the gap is
+``M + D - I - n``: provincial misreporting ``M``, double counting ``D >= 0``, the
+informal-economy adjustment ``I >= 0``, and any overstatement ``n`` in the national figure
+itself. The undecomposed residual is at least ``M`` only if ``D >= I + n``, and nothing in this
+project supports that, so it is neither an upper nor a lower bound on misreporting. Removing
+double counting alone leaves ``M - I - n``, which understates ``M`` whenever ``I + n > 0``. A
+bound may be reported only under an explicit sign or size assumption for every term not
+estimated, printed beside the number (the standard ``ROADMAP.md`` sets for bounds).
 
 The reconciliation framing is Narasimhan and Jordache (2000), chapters 3 to 5, as implemented
 in :mod:`forensics_core.reconcile`: treat the provincial measurements and the national total
@@ -180,6 +194,17 @@ def mechanical_gap_components(
 ) -> pd.DataFrame:
     """Estimate how much of the gap is method rather than misreporting.
 
+    The components, each with the sign it puts on the nominal gap:
+
+    - ``double_counting``: cross-province double counting, ``D >= 0``, widens the gap.
+    - ``informal_adjustment``: the centre's informal-economy adjustment, which provinces do
+      not apply, ``I >= 0``, narrows the gap because it raises the national total.
+    - ``deflator``: provincial against national deflators. Present in the real-growth gap
+      only, sign unknown; null for the nominal-levels gap.
+
+    Boundary changes and census rebasing are not a column: they are handled through the break
+    table (``boundary_changes`` and ``rebasing_years``), by not comparing across a break.
+
     Parameters
     ----------
     panel : pandas.DataFrame
@@ -194,9 +219,9 @@ def mechanical_gap_components(
     Returns
     -------
     pandas.DataFrame
-        One row per year with a column per mechanical component and a ``residual`` column.
-        Every component that cannot be estimated from available data is present and null
-        rather than absent, so that the residual is never mistaken for a clean one.
+        One row per year with a column per mechanical component above and a ``residual``
+        column. Every component that cannot be estimated from available data is present and
+        null rather than absent, so that the residual is never mistaken for a clean one.
 
     Raises
     ------
@@ -206,13 +231,20 @@ def mechanical_gap_components(
     Notes
     -----
     What remains, and it is the hardest open question in the project: there is no free source
-    for the cross-province double-counting component, and no deflator series by province in
-    the registry. Until both exist, the residual is an upper bound on misreporting and has to
-    be reported as one.
+    for the cross-province double-counting component, none for the size of the centre's
+    informal-economy adjustment, and no deflator series by province in the registry. Until
+    they exist, the residual is reported as the undecomposed gap and not as a bound on
+    misreporting in either direction: double counting and the informal-economy adjustment
+    push it opposite ways and neither is sized. A bound is reportable only beside an
+    explicit sign or size assumption for each omitted term (for example "if double counting
+    is at least the informal-economy adjustment plus any national overstatement, the
+    residual is at least misreporting").
     """
     raise NotImplementedError(
-        "no free source for cross-province double counting or provincial deflators is in "
-        "data/SOURCES.yaml; the decomposition cannot be estimated, only bounded"
+        "no free source for cross-province double counting, the informal-economy adjustment "
+        "or provincial deflators is in data/SOURCES.yaml; the residual can be reported as the "
+        "undecomposed gap, and as a bound only under a stated sign assumption for each "
+        "omitted term"
     )
 
 
