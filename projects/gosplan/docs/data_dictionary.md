@@ -130,9 +130,13 @@ period spanning 1939-40 (`territorial_basis_unstated`); the confidence flag must
 **Arithmetic.** Every printed total is checked against the sum of the `data` cells in its
 group, along both axes, with subtotals excluded so they cannot double-count
 (`total_mismatch`). The tolerance is not a chosen epsilon: a figure printed to `d` decimals
-differs from the truth by at most `0.5 * 10**-d`, so `n` addends plus one printed total give
-a bound of `(n + 1) * 0.5 * 10**-d`. A total whose addends are not all numbers is reported as
-`total_unchecked` rather than silently skipped.
+differs from the truth by at most `0.5 * 10**-d`, and each figure is charged at its own printed
+precision, so addends printed to `d_1 ... d_n` and a total printed to `d_t` give a bound of
+`sum(0.5 * 10**-d_i) + 0.5 * 10**-d_t`. When every figure has the same `d` this is
+`(n + 1) * 0.5 * 10**-d`. Mixed precision is the case that matters: `2,4 + 3,4` printed with a
+total of `6` is correctly rounded (bound `0.05 + 0.05 + 0.5 = 0.6`), and charging every figure
+the finest precision in the group would reject it. A total whose addends are not all numbers
+is reported as `total_unchecked` rather than silently skipped.
 
 **Distributional.** A value about ten, a hundred, a tenth or a hundredth of its own series
 median is flagged `decimal_shift_suspected`. This is the only check that can fire on a correct

@@ -19,8 +19,9 @@ one, and a cell printed with a conventional mark must not. These catch the traps
 ``docs/known_traps.md`` at the point where a person can still go back and look at the page.
 
 **Arithmetic.** Where the printed table carries totals, the total must equal the sum of its
-addends to within the tolerance that rounding permits, computed from the number of addends
-and the number of printed decimals rather than from a guessed epsilon. This is the strongest
+addends to within the tolerance that rounding permits, computed from the decimals each figure
+is printed with (half a unit in its own last place, summed over the addends and the total)
+rather than from a guessed epsilon. This is the strongest
 check available, because it uses information the printer put on the page.
 
 **Distributional.** Values wildly out of line with their own series are flagged as suspected
@@ -60,6 +61,7 @@ __all__ = [
     "Issue",
     "ValidationReport",
     "cell_key",
+    "printed_rounding_tolerance",
     "rounding_tolerance",
     "validate_file",
     "validate_rows",
@@ -210,6 +212,46 @@ def rounding_tolerance(n_addends: int, decimals: int) -> float:
     if decimals < 0:
         raise ValueError("decimals must be non-negative")
     return (n_addends + 1) * 0.5 * 10.0 ** (-decimals)
+
+
+def printed_rounding_tolerance(addend_decimals: Sequence[int], total_decimals: int) -> float:
+    """The rounding tolerance when the figures are not all printed to the same precision.
+
+    The argument behind :func:`rounding_tolerance` holds figure by figure: each printed
+    figure is off from its true value by at most half a unit in *its own* last printed place.
+    A table that prints the large republics as whole numbers and the small ones to one
+    decimal therefore carries ``0.5`` of slack in each whole number and ``0.05`` in each
+    decimal, and the bound is the sum of those, not ``n + 1`` copies of the finest one.
+    Charging every figure the finest precision in its group makes the bound too tight and
+    rejects correctly rounded tables. When every figure has the same ``d`` this equals
+    ``rounding_tolerance(len(addend_decimals), d)`` exactly.
+
+    Parameters
+    ----------
+    addend_decimals : sequence of int
+        Decimal places printed for each addend, one entry per addend.
+    total_decimals : int
+        Decimal places printed for the total.
+
+    Returns
+    -------
+    float
+        The absolute tolerance: ``sum(0.5 * 10**-d_i) + 0.5 * 10**-d_total``.
+
+    Examples
+    --------
+    >>> printed_rounding_tolerance([1, 1], 0)
+    0.6
+    >>> printed_rounding_tolerance([1, 1, 1], 1) == rounding_tolerance(3, 1)
+    True
+    """
+    counts = Counter(int(d) for d in addend_decimals)
+    counts[int(total_decimals)] += 1
+    if any(d < 0 for d in counts):
+        raise ValueError("decimals must be non-negative")
+    # Grouped by precision so that the uniform case is computed exactly as
+    # rounding_tolerance computes it, with no extra floating-point error.
+    return math.fsum(rounding_tolerance(n - 1, d) for d, n in sorted(counts.items()))
 
 
 def cell_key(row: Mapping[str, Any]) -> tuple[str, str, str]:
@@ -451,14 +493,14 @@ def _check_totals(
             )
             continue
 
-        decimals = max(parsed[i].decimals for i in numeric)
+        addend_decimals = [parsed[i].decimals for i in numeric]
         total_sum = math.fsum(parsed[i].value for i in numeric)
         for t in totals:
             pt = parsed.get(t)
             if getattr(pt, "kind", "") != "number":
                 continue
-            decimals_here = max(decimals, pt.decimals)
-            tol = rounding_tolerance(len(numeric), decimals_here)
+            tol = printed_rounding_tolerance(addend_decimals, pt.decimals)
+            precision = sorted(set(addend_decimals) | {pt.decimals})
             diff = abs(pt.value - total_sum)
             if diff > tol:
                 issues.append(
@@ -467,8 +509,8 @@ def _check_totals(
                         "total_mismatch",
                         f"{axis} total for {label!r} in {period!r}: printed {pt.value:g}, "
                         f"addends sum to {total_sum:g}, difference {diff:g} exceeds the "
-                        f"rounding tolerance {tol:g} for {len(numeric)} addends at "
-                        f"{decimals_here} decimal place(s)",
+                        f"rounding tolerance {tol:g} for {len(numeric)} addends and the "
+                        f"total printed to {'/'.join(map(str, precision))} decimal place(s)",
                         t,
                         "value_raw",
                     )
