@@ -91,7 +91,12 @@ series at all.
 ## What a transferred detector must do here
 
 1. Rank the Uzbek cotton sector in the 1978–1983 window at or near the top when applied blind
-   to the full panel.
+   to the full panel. Fixed in advance: the comparator set is every non-anchor row of the full
+   panel, ranked globally and not within sector. The detector is fitted on the source project
+   and scores the whole panel; each anchor row's rank is the number of comparator rows scoring
+   at or above it, plus one (`gosplan.anchor_rank.anchor_rank`). The shared library's
+   `anchor_holdout` split cannot produce this number: its test fold would be the anchor rows
+   alone, with nothing to rank them against.
 2. Not rank it top for the wrong reason: the same detector must not fire equally on sectors
    and periods with no independent evidence of padding, and any such firing must be reported
    rather than filtered away.

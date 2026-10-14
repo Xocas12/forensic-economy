@@ -91,13 +91,21 @@ def test_the_transfer_module_names_the_three_calibration_projects():
     assert set(SOURCE_PROJECTS) == {"elections", "aaer", "china"}
 
 
-def test_the_transfer_module_uses_the_anchor_holdout_split():
+def test_the_transfer_module_ranks_the_anchor_in_the_full_panel_not_in_anchor_holdout():
+    """The anchor's rank comes from full-panel scores against a stated comparator set.
+
+    ``anchor_holdout`` makes the test fold the anchor rows alone, so ``evaluate()`` has nothing
+    to rank them against and raises; the module must not offer it as this project's split.
+    """
     from gosplan.analysis import transfer
 
-    doc = inspect.getdoc(transfer.anchor_holdout_spec) or ""
-    assert "anchor_holdout" in doc or "anchor_holdout" in inspect.getsource(
-        transfer.anchor_holdout_spec
-    )
+    assert not hasattr(transfer, "anchor_holdout_spec")
+    module_doc = " ".join((inspect.getdoc(transfer) or "").split())
+    assert "deliberately **not** used" in module_doc
+    assert "every non-anchor row of the full panel" in module_doc
+    report_doc = " ".join((inspect.getdoc(transfer.transfer_report) or "").split())
+    assert "gosplan.anchor_rank.anchor_rank" in report_doc
+    assert "every non-anchor row of the full panel" in report_doc
 
 
 def test_the_anchor_window_stub_records_the_unresolved_inconsistency():

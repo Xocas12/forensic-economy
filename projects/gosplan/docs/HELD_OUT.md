@@ -113,6 +113,11 @@ anchor is a violation of `CONTRACT.md` rule 5.
 ## After G3
 
 `held_out_mask` still identifies the anchor rows once the seal is lifted, and must: a later task needs
-exactly that mask to build the `anchor_holdout` split, where detectors are fitted without ever
-seeing the anchor and then asked to rank it. The seal hides the anchor; it does not forget where
-it is.
+exactly that mask to read the anchor's rank. Detectors are fitted on a source project, so they
+never see any gosplan row; they score the full panel, and `gosplan.anchor_rank.anchor_rank` ranks
+each anchor row against every non-anchor row of that panel. The seal hides the anchor; it does
+not forget where it is.
+
+That rank is not computed with the shared library's `anchor_holdout` split. Its test fold is
+exactly the masked rows, so a mask that is only the anchor leaves nothing to rank the anchor
+against, and `evaluate()` raises.

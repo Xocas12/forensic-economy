@@ -12,11 +12,20 @@ project, a score this high had precision p". That is what
 :func:`forensics_core.eval.harness.transfer` returns, and the calibration table is the part
 that matters -- the raw score is meaningless without it.
 
-The split is ``anchor_holdout``. :class:`forensics_core.eval.harness.EvalSpec` takes an
-``anchor_mask`` marking the rows that *are* the anchor; those rows are held out of fitting and
-scored blind. With one anchor this does not estimate a false-positive rate -- nothing can,
-from inside this project -- but it does stop the anchor from being used to choose the
-detector that finds it.
+The anchor is scored as part of the **full panel**, not held out in a split of its own.
+:func:`forensics_core.eval.harness.transfer` fits the detector on the source project, so no
+gosplan row -- anchor or not -- is ever in the fit set, and the anchor cannot be used to
+choose the detector that finds it. The anchor's rank is then read off the full-panel scores
+by :func:`gosplan.anchor_rank.anchor_rank`, against a comparator set fixed in advance: every
+non-anchor row of the full panel (:data:`gosplan.anchor_rank.COMPARATOR_SET`). With one
+anchor this does not estimate a false-positive rate -- nothing can, from inside this project.
+
+``EvalSpec(split="anchor_holdout")`` is deliberately **not** used. Its test fold is exactly the
+anchor rows, which are all positives or all unlabelled, so the fold has nothing to rank the
+anchor against and :func:`forensics_core.eval.harness.evaluate` raises ("no fold had both a
+positive and a negative"). Widening the mask until it does produce a number measures
+discrimination among a handful of Uzbek cotton rows, not a rank in the panel, and needs
+presumed-clean rows coded 0, which :func:`build_panel` refuses to do.
 
 What a transferred detector has to do, from ``docs/validation_anchors.md``:
 
@@ -51,7 +60,6 @@ from forensics_core.eval.harness import Dataset, Detector, EvalReport, EvalSpec,
 
 __all__ = [
     "SOURCE_PROJECTS",
-    "anchor_holdout_spec",
     "build_panel",
     "build_uzbek_cotton_anchor_mask",
     "transfer_from_calibrated",
@@ -118,7 +126,7 @@ def build_uzbek_cotton_anchor_mask(
     sector: str = "cotton",
     republic: str = "uzbek_ssr",
 ) -> pd.Series:
-    """Mark the rows that are the anchor, for the ``anchor_holdout`` split.
+    """Mark the rows that are the anchor, whose rank in the full panel is the transfer check.
 
     Parameters
     ----------
@@ -153,41 +161,6 @@ def build_uzbek_cotton_anchor_mask(
     """
     raise NotImplementedError(
         "needs the panel; and the anchor window's edges are themselves uncertain across sources"
-    )
-
-
-def anchor_holdout_spec(
-    anchor_mask: pd.Series, *, ks: tuple[float, ...] = (0.01, 0.05, 0.10)
-) -> EvalSpec:
-    """The evaluation specification this project uses: hold the anchor out, score it blind.
-
-    Parameters
-    ----------
-    anchor_mask : pandas.Series
-        From :func:`build_uzbek_cotton_anchor_mask`.
-    ks : tuple of float
-        Cut-offs for the rank metrics, as fractions of the panel.
-
-    Returns
-    -------
-    forensics_core.eval.harness.EvalSpec
-        With ``split="anchor_holdout"``.
-
-    Raises
-    ------
-    NotImplementedError
-        Always.
-
-    Notes
-    -----
-    Remaining: trivial to construct, deliberately left as a stub so that no part of this
-    package can be run before the panel exists. What still needs deciding is whether the
-    metrics are computed over the whole panel or within sector, which changes what "ranked at
-    the top" means.
-    """
-    raise NotImplementedError(
-        "constructs an EvalSpec with split='anchor_holdout'; blocked on the panel and on "
-        "whether ranking is global or within sector"
     )
 
 
@@ -252,16 +225,22 @@ def transfer_report(
     anchor_mask : pandas.Series
         Which rows are the anchor.
     top_k : float, default 0.05
-        Fraction of the panel counted as "the top" when asking whether the anchor was ranked
-        there.
+        Fraction of the full panel (anchor plus comparators) counted as "the top" when asking
+        whether the anchor was ranked there.
 
     Returns
     -------
     (pandas.DataFrame, dict)
-        A table with, per source project: the anchor's rank, whether it fell inside the top
-        ``top_k``, and how many non-anchor rows scored above it -- the last being the number
-        that says whether the detector is discriminating or simply firing everywhere. Plus the
-        per-source evaluation reports.
+        A table with, per source project and anchor row: the row's rank against the
+        comparator set, whether it fell inside the top ``top_k`` of the full panel, and how
+        many non-anchor rows scored at or above it -- the last being the number that says
+        whether the detector is discriminating or simply firing everywhere. The rank is read
+        by :func:`gosplan.anchor_rank.anchor_rank` from the source-fitted, full-panel scores in
+        each :class:`~forensics_core.eval.harness.TransferResult`; the comparator set is
+        every non-anchor row of the full panel, global and not within sector, as
+        ``docs/validation_anchors.md`` check 1 states. Plus the per-source evaluation reports,
+        which are the source projects' own out-of-sample reports, not an evaluation of the
+        anchor.
 
     Raises
     ------

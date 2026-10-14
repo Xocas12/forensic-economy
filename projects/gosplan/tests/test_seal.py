@@ -199,7 +199,7 @@ def test_everything_opens_once_the_seal_is_lifted(unsealed):
     assert len(out) == len(df)
     check_grouping(df, "region")
     # held_out_mask still IDENTIFIES the anchor rows once unsealed, and must: a later task needs it
-    # to build the anchor_holdout split. It is filter_sealed that stops withholding them.
+    # to read the anchor's rank in the full panel. It is filter_sealed that stops withholding them.
     assert held_out_mask(df).sum() == 3
 
 
