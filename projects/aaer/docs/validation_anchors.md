@@ -68,8 +68,54 @@ Walker's own re-runs of the corrected code produced 8 hits in both windows rathe
 table with figures read from it directly.
 
 **What counts as reproduced.** Matching AUC to within roughly ±0.02 on the same test windows,
-using the same labels, before claiming any improvement. Note that this is not achievable on
-the free data path without resolving the coverage problem below.
+under the same protocol (below), using the same labels, before claiming any improvement. Note
+that this is not achievable on the free data path without resolving the coverage problem
+below.
+
+### Replication protocol
+
+This section is the replication's specification; the G1 analysis plan, when it is written,
+carries it over unchanged or says what it changes and why. It was read from the authors'
+posted code, `run_RUSBoost.m` and `evaluate.m` in `JarFraud/FraudDetection` at commit
+2d10bc6 (the `jarfraud_github_repo` entry in `data/SOURCES.yaml`), not from the paper.
+
+The published figures are **not** one model scored on one pooled test set. For each test year
+*t* from 2003 to 2014 the code:
+
+1. **retrains** on fiscal years 1991 to *t* − 2, leaving a **two-year gap** between the last
+   training year and the test year;
+2. **recodes serial frauds against that test year**: every training row whose `p_aaer` is
+   among the `p_aaer` values of year *t*'s positives is set to 0 before fitting;
+3. **scores year *t* alone**, with *k* for NDCG@k and the other top-*k* metrics computed on
+   year *t*'s firm-years as `round(0.01 * n)`. MATLAB's `round` takes halves away from zero;
+   Python's `round` takes them to even, and the shared harness turns a fractional *k* into
+   `ceil(k * n)`, which is one more than `round` whenever the fractional part of `0.01 * n`
+   is strictly between 0 and 0.5. The replication passes the integer *k* explicitly.
+
+A window figure is the **unweighted mean of the per-year figures** over the window's years.
+For AUC this is checked: Walker's per-year AUCs (2003 0.7281, 2004 0.7646, 2005 0.7289,
+2006 0.7590, 2007 0.7176, 2008 0.6280) average to 0.7405 and 0.7210, the Run(1) window
+figures of his Table 2 (`ejw_walker_2022`). For NDCG@1 % the mean is assumed the same way, and
+the window's hits are assumed to be the per-year sum; neither is checked against a per-year
+table.
+
+So a single temporal fold — train on everything up to one year, test on every later year
+pooled, no gap and no window end, which is what `EvalSpec(split="temporal")` in
+`forensics_core` does — is a **different estimand**, and a number from it is not a hit or a
+miss against the table above. Retraining for each test year uses fresher data than one frozen
+model does, so the two designs need not agree even with the same model and labels, and the
+difference is not bounded by anything this repository has measured.
+
+**Labels.** The like-for-like run uses the pinned Bao et al. CSV's `misstate` as it stands:
+the authors' **ex-post labels**, built from AAERs released through 31 December 2018, years
+after every test year. That is what "the same labels" above means. A **release-censored**
+variant, which keeps only violations whose AAER was released by the test cutoff (trap 3 in
+`known_traps.md`), is a different and separately reported measurement, never compared with
+this table. It cannot be run until `p_aaer` is mapped to release dates, because the Bao CSV
+carries none.
+
+`aaer.analysis.pu_benchmark` encodes the same protocol (`BAO_TRAIN_START`, `BAO_GAP_YEARS`,
+`BAO_K_FRACTION`, `BAO_K_ROUNDING`, `BAO_LIKE_FOR_LIKE_LABELS`).
 
 ## Tier 2 — the coverage problem, stated as numbers
 

@@ -19,10 +19,18 @@ published benchmark's choice of NDCG@k with k = 1 % of test firm-years.
 ## 3. Label timing
 
 An AAER is issued years after the misstatement. The label attaches to the *misstated* fiscal
-years, not to the release year; a temporal split must use the fiscal year of the violation and
-must not let information from a release issued after the test-period cutoff leak into
-training. (The correction to the published benchmark concerns exactly this kind of leakage;
-see `validation_anchors.md`.)
+years, not to the release year; a temporal split must use the fiscal year of the violation and,
+for an honest forecast, must not let information from a release issued after the test-period
+cutoff leak into training.
+
+The published benchmark does not do that, and its replication must not either: Bao et al.
+label from AAERs released through 31 December 2018, after every test year, and "the same
+labels" in `validation_anchors.md` means those ex-post labels. So the like-for-like
+replication uses them as they stand, and a release-censored run that applies this trap is
+reported **separately**, never compared with the published figures. It needs `p_aaer` mapped
+to release dates first; the Bao CSV has none. The 2022 correction to the benchmark is about
+something else, serial-fraud recoding across the train/test boundary; see "Replication
+protocol" in `validation_anchors.md`.
 
 ## 4. Restatements and the same firm appearing on both sides of a split
 
