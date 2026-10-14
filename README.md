@@ -32,7 +32,7 @@ of level (`forensics_core.dispersion`).
 | | Question | Docs |
 |---|---|---|
 | `aaer` | Reproduce the Beneish M-score baseline and the Bao et al. (2020) ML benchmark with SEC enforcement releases as labels | [README](projects/aaer/README.md) · [docs](projects/aaer/docs/) |
-| `china` | Measure the provincial-sum vs national GDP gap; test provincial series against physical proxies; use the unified-accounting reform as a natural experiment | [README](projects/china/README.md) · [docs](projects/china/docs/) |
+| `china` | Measure the provincial-sum vs national GDP gap; test provincial series against physical proxies; test which provinces the 2019 accounting reform moved most, since the reform changed the method by design | [README](projects/china/README.md) · [docs](projects/china/docs/) |
 | `gosplan` | Bound the volume of reporting distortion in Soviet statistics using methods calibrated above. Mostly transcription, not downloads | [README](projects/gosplan/README.md) · [docs](projects/gosplan/docs/) |
 
 ## Layout
@@ -82,7 +82,7 @@ make validate-sources
 
 ## Status
 
-1,202 tests pass. The shared library, the source registries and the acquisition pipelines are
+1,209 tests pass. The shared library, the source registries and the acquisition pipelines are
 built, and one of the three projects now has its data in hand.
 
 **aaer** — the Bao et al. (2020) replication panel is acquired, loaded, tested and described:
@@ -119,7 +119,7 @@ Five repositories, one programme. All public.
 | [psephos](https://github.com/Xocas12/psephos) | standalone election anomaly-detection tool, CLI and library | works; 47 tests |
 | [forensics-core](https://github.com/Xocas12/forensics-core) | the shared method library | implemented; 840 tests; carried the elections result |
 | [forensic-elections](https://github.com/Xocas12/forensic-elections) | Russian federal elections, the calibration project | **anchors 1 and 3 reproduced on real data**; 914 tests |
-| [forensic-economy](https://github.com/Xocas12/forensic-economy) | accounting enforcement, Chinese provincial statistics, Soviet statistics | data acquired for aaer; no analysis run; 1,202 tests |
+| [forensic-economy](https://github.com/Xocas12/forensic-economy) | accounting enforcement, Chinese provincial statistics, Soviet statistics | data acquired for aaer; no analysis run; 1,209 tests |
 | [gosplan-env](https://github.com/Xocas12/gosplan-env) | multi-agent environment where reporting pathologies emerge from incentives | reference dynamics implemented and runnable; no learning agent yet |
 
 The calibration project has been run and has a result. This repository holds the two projects

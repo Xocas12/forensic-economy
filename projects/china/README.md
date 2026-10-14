@@ -6,13 +6,16 @@ national gross domestic product, and test whether provincial series track physic
 Provincial bureaus computed their own figures from 1985 until the centre took the calculation
 over. The summed provincial total exceeded the national one, and the bureau's own deputy head
 gave that gap as the reason for the reform, saying the two were "too far apart". Part of the
-gap is method. Part of it has been admitted to be fabrication. The reform is the natural
-experiment that separates them, if anything can.
+gap is method. Part of it has been admitted to be fabrication. The reform does not separate
+them by itself: it changed the method precisely so that the provincial sum would line up with
+the national figure, so the gap was meant to shrink at 2019 whether or not anything was
+fabricated. What can bear on fabrication is which provinces the reform moved most, and only
+under a stated model of how the method change and the census moved each one.
 
 | | |
 |---|---|
 | Unit of observation | Province-year, 31 provincial-level units |
-| Ground truth | Partial: three self-admitted falsification episodes, and one accounting-reform discontinuity |
+| Ground truth | Partial: three self-admitted falsification episodes. The 2019 accounting reform is a dated break, not a label |
 | Blocked on a human? | **Yes.** See below |
 | Sources in the registry | 37 |
 | Acquirers implemented | 22 |
@@ -114,6 +117,15 @@ in this tree.**
    break is at the **2019 data year**, not the 2017 approval. Using 2017 tests a different and
    much weaker hypothesis, and doing so by accident is the most likely way to get a wrong
    answer that looks right. `REFORM_FIRST_DATA_YEAR = 2019` is asserted in the test suite.
+   **The date fixes when the break is, not what it means.** The plan reformed the accounting
+   method in order to bring the provincial sum into line with the national figure
+   (`nbs_qa_unified_accounting_plan_2017`), so the gap is predicted to contract at 2019 with
+   no misreporting at all, and the aggregate jump is the combined effect of the method change,
+   the fourth economic census and any misreporting. It is reported as that. Any misreporting
+   claim from the reform rests on `cross_province_reform_contrast`: whether the reform moved a
+   province more where its pre-reform growth had outrun its proxies, under a stated model of
+   how the method and census revisions are distributed across provinces. That model has not
+   been chosen; see the open questions below.
 3. `proxies` - provincial product against electricity, rail freight, credit and nightlights.
 4. `dispersion` - underdispersion of provincial growth against a proxy-implied variance floor.
 5. `bunching` - excess mass at the provincial growth target.
@@ -197,3 +209,9 @@ only. Nothing has been fetched, no panel exists, and no number in this tree is a
   deflators?** Neither is in the registry. Until they are, the mechanical component of the gap
   cannot be estimated and the residual is an upper bound on misreporting, which is how it must
   be reported.
+- **What model of the reform's legitimate revisions does the cross-province contrast rest
+  on?** Every province's figures move at 2019 for the method change and the census, and the
+  contrast attributes to misreporting only what that model leaves unexplained. It has to say
+  how the method and census revisions are distributed across provinces, and which covariates
+  it conditions on, and it has to be fixed before the revisions are seen. Without it the
+  reform supports no misreporting claim.
