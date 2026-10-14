@@ -69,14 +69,27 @@ def build_dataset(features: pd.DataFrame, labels: pd.DataFrame, *, source: str) 
     Returns
     -------
     Dataset
-        ``y`` is 1 on labelled positives and ``NaN`` on the unlabeled remainder;
-        :class:`forensics_core.eval.harness.PUDetector` reads ``NaN`` as unlabeled.
+        ``y`` is 1 on labelled positives, 0 on firm-years nobody charged, and ``NaN`` only
+        where the status cannot be known yet (for example inside the enforcement-lag horizon);
+        ``docs/data_dictionary.md`` section 6.
+        :class:`forensics_core.eval.harness.PUDetector` reads 0 and ``NaN`` alike as
+        unlabeled, so the PU arm loses nothing by the 0, while the naive arm's
+        :class:`~forensics_core.eval.harness.SklearnDetector` reads the same 0 as a negative.
+        Both arms therefore take this dataset unchanged and are scored on the same rows, the
+        labelled test rows, charged and uncharged. Coded ``NaN`` instead, the uncharged rows
+        would leave :func:`~forensics_core.eval.harness.evaluate` nothing to rank and
+        :func:`~forensics_core.eval.harness.transfer` a calibration curve built on positives
+        alone. Metrics are measured against enforcement labels with the uncharged firm-years
+        scored as 0, and every table must say so. The Bao et al. file already codes them this
+        way (``misstate = 0``); a firm-year coded ``NaN`` instead departs from the published
+        labels, and that has to be stated beside any comparison with the published figures.
 
     Raises
     ------
     NotImplementedError
         Remaining: decide how serial-fraud cases spanning the train/test boundary are handled.
-        Mishandling exactly that is what the 2022 erratum was about.
+        Mishandling exactly that is what the 2022 erratum was about. The enforcement-lag
+        horizon inside which an uncharged firm-year is ``NaN`` rather than 0 is also undecided.
     """
     raise NotImplementedError(
         "Remaining: fix the serial-fraud recoding rule for cases spanning the split -- the "
@@ -85,10 +98,16 @@ def build_dataset(features: pd.DataFrame, labels: pd.DataFrame, *, source: str) 
 
 
 def naive_supervised_report(ds: Dataset, spec: EvalSpec) -> EvalReport:
-    """The comparison arm: unlabeled firm-years treated as negatives.
+    """The comparison arm: firm-years nobody charged treated as negatives.
 
     This is the formulation the literature mostly uses. It is included to be beaten, or not, on
     the same split and the same metrics.
+
+    It takes the PU arm's dataset unchanged. The arms differ in the detector, not in the
+    labels: :class:`~forensics_core.eval.harness.SklearnDetector` reads ``y = 0`` as a
+    negative and :class:`~forensics_core.eval.harness.PUDetector` reads it as unlabeled.
+    Recoding ``y`` for this arm alone would change which rows are evaluated, and the
+    comparison would stop isolating the label treatment that sub-question 3 asks about.
 
     Parameters
     ----------
@@ -133,7 +152,9 @@ def run_pu_benchmark(
     -------
     pandas.DataFrame
         One row per (estimator, test window) with AUC, average precision, NDCG@1% and
-        precision@1%, the number of test positives, and the test-period base rate.
+        precision@1%, the number of test positives, and the test-period base rate, all
+        measured against enforcement labels with the uncharged firm-years scored as 0, on the
+        same labelled test rows for every estimator. The table has to say so.
 
     Raises
     ------
@@ -184,7 +205,10 @@ def transfer_to(source: Dataset, target: Dataset, spec: EvalSpec | None = None) 
     This is the programme's whole design in one call: a detector calibrated where ground truth
     exists is scored where it does not, and the source-calibrated score-to-precision curve is
     what makes a target score readable at all
-    (:func:`forensics_core.eval.harness.transfer`).
+    (:func:`forensics_core.eval.harness.transfer`). That curve is computed on the source rows
+    whose ``y`` is not ``NaN``, so it reads precision against enforcement only because
+    :func:`build_dataset` codes the uncharged firm-years 0. Coded ``NaN``, every calibration
+    row would be a positive and every threshold would read as precision 1.0.
 
     Parameters
     ----------

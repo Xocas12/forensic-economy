@@ -56,16 +56,23 @@ def build_dataset(panel: pd.DataFrame, labels: pd.DataFrame) -> Dataset:
     Returns
     -------
     Dataset
-        ``y`` is 1 for labelled violation firm-years and ``NaN`` -- not 0 -- for everything
-        else, because unflagged firm-years are unlabeled rather than clean (trap 1).
-        ``groups`` is the firm and ``time`` the fiscal year, so both grouped and temporal
-        splits are available.
+        ``y`` is 1 for labelled violation firm-years, 0 for firm-years nobody charged, and
+        ``NaN`` only for firm-years whose status cannot be known yet (for example inside the
+        enforcement-lag horizon, where an AAER may still be issued); ``docs/data_dictionary.md``
+        section 6. The 0 is the harness's "presumed clean", not a claim that the firm-year was
+        clean (trap 1). It is also what lets :func:`forensics_core.eval.harness.evaluate`
+        score anything: metrics are computed on the rows whose ``y`` is not ``NaN``, and with
+        every unflagged firm-year ``NaN`` all of those rows would be positives. Every metric
+        on this dataset is therefore measured against enforcement labels with the unflagged
+        firm-years scored as 0, and every table must say so. ``groups`` is the firm and
+        ``time`` the fiscal year, so both grouped and temporal splits are available.
 
     Raises
     ------
     NotImplementedError
         Remaining: decide the firm key that joins labels to the panel (the AAER listing carries
-        a respondent name, not a CIK) and fix the violation-year convention.
+        a respondent name, not a CIK), fix the violation-year convention, and fix the
+        enforcement-lag horizon inside which an uncharged firm-year is ``NaN`` rather than 0.
     """
     raise NotImplementedError(
         "Remaining: join AAER labels to firm-years -- the listing has no CIK, so the identifier "

@@ -199,7 +199,7 @@ def scan_earnings_notches(x: pd.Series, candidates: tuple[float, ...], **kwargs)
 
 
 def bunching_by_label(x: pd.Series, y: pd.Series, notch: Notch, **kwargs) -> pd.DataFrame:
-    """Excess mass among labelled violation firm-years versus everything else.
+    """Excess mass among labelled violation firm-years versus the firm-years nobody charged.
 
     This is the comparison that carries the evidence. Bunching at zero in the whole population
     is expected for reasons unrelated to manipulation; bunching that is *larger* among firms
@@ -211,9 +211,10 @@ def bunching_by_label(x: pd.Series, y: pd.Series, notch: Notch, **kwargs) -> pd.
     x : pandas.Series
         Running variable.
     y : pandas.Series
-        Labels: 1 for a charged firm-year, ``NaN`` for unlabeled. Not 0 -- unflagged firm-years
-        are unlabeled (``docs/known_traps.md`` trap 1), and the comparison group has to be
-        described that way in any table.
+        Labels coded as in ``docs/data_dictionary.md`` section 6: 1 for a charged firm-year,
+        0 for one nobody charged, ``NaN`` where the status cannot be known yet. The comparison
+        group is the 0s, and any table has to describe it as uncharged rather than clean
+        (``docs/known_traps.md`` trap 1). ``NaN`` rows belong to neither group.
     notch : Notch
         The threshold being tested.
     **kwargs
