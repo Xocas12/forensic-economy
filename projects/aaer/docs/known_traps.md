@@ -6,14 +6,17 @@ The SEC pursues cases that are detectable, large and litigable. A model trained 
 learns *what gets prosecuted*, not *what happens*. Consequences:
 
 - Unflagged firm-years are **unlabeled, not negative**. `forensics_core.labels.pu` (Elkan–Noto,
-  bagging PU) treats them that way, but under rank metrics (trap 2) that alone does not get a
-  model out of this trap. Elkan–Noto's score is the treat-as-clean classifier's divided by one
-  constant, so it ranks firm-years exactly as that classifier does; it is not an arm of the
-  rank comparison and is used only for the class prior, the share of misstatement never
-  charged. Bagging PU ranks differently only with a nonlinear base classifier, and then because
-  it estimates differently, not because it corrects anything. Both assume charged cases are a
-  random draw from the misstatements, which is what this trap says is false, so neither undoes
-  a selection that depends on the firm. That needs a model of the selection itself.
+  bagging PU) is written for that case, but under rank metrics (trap 2) neither estimator gets
+  a model out of this trap. Elkan–Noto's score is the treat-as-clean classifier's divided by
+  one constant, so it ranks firm-years exactly as that classifier does; it is not an arm of the
+  rank comparison and is used only for the class prior. Its constant estimates the share of
+  misstatement that gets charged, and the gap between the misstatement rate it implies and the
+  observed AAER rate is the misstatement never charged. Bagging PU, on the rows it scores, is
+  balanced bagging of the treat-as-clean classifier, so a naive arm bagged the same way ranks
+  exactly as it does, and a gap from a single naive model measures the ensemble, not the label
+  treatment. Both assume charged cases are a random draw from the misstatements, which is what
+  this trap says is false, so neither undoes a selection that depends on the firm. That needs
+  a model of the selection itself.
 - Performance measured against AAER labels is performance at predicting enforcement.
   Say so in every table.
 

@@ -102,15 +102,18 @@ enforcement.
 
 **The positive-unlabeled formulation does not get out of that under rank metrics.**
 Elkan-Noto fits that same classifier and divides its score by one constant, so it ranks
-firm-years exactly as the classifier does. It is kept for what the constant estimates, the
-share of misstatement never charged, and it is not an arm of the rank comparison. Bagging PU
-does rank differently with a nonlinear base, but it assumes, as Elkan-Noto does, that charged
-cases are a random draw from the misstatements, which is the assumption this trap denies.
-Undoing a selection that depends on the firm needs a model of the selection, and none has been
-chosen. So every metric here is performance at predicting enforcement, and it is reported as
-rank metrics with the base rate printed beside them: at 0.66% positives, a model that flags
-nothing is 99.3% accurate. This and six other confounds are in
-[docs/known_traps.md](docs/known_traps.md).
+firm-years exactly as the classifier does. It is not an arm of the rank comparison. It is kept
+for the class prior: the constant estimates the share of misstatement that gets charged, and
+the gap between the misstatement rate it implies and the observed AAER rate is the
+misstatement never charged. Bagging PU, on the rows it scores, is the same classifier fitted
+on rebalanced resamples and averaged, so a naive arm bagged the same way ranks exactly as it
+does, and its gap from a single naive model is the ensemble's doing, not the label
+treatment's. Both assume that charged cases are a random draw from the misstatements, which is
+the assumption this trap denies. Undoing a selection that depends on the firm needs a model of
+the selection, and none has been chosen. So every metric here is performance at predicting
+enforcement, and it is reported as rank metrics with the base rate printed beside them: at
+0.66% positives, a model that flags nothing is 99.3% accurate. This and six other confounds
+are in [docs/known_traps.md](docs/known_traps.md).
 
 ## The weakest link, named
 

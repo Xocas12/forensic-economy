@@ -10,8 +10,8 @@ only. It is not an arm of the rank comparison; see below.
 Mordelet, F. and J.-P. Vert (2014). "A bagging SVM to learn from positive and unlabeled
 examples." *Pattern Recognition Letters* 37: 201-209: bagging all positives against bootstrap
 subsamples of the unlabeled pool, implemented as
-:class:`forensics_core.labels.pu.BaggingPU`. The PU arm of the rank comparison, with a
-nonlinear base classifier.
+:class:`forensics_core.labels.pu.BaggingPU`. The PU arm of the rank comparison; what a gap
+between it and the naive arm does and does not measure is set out below.
 
 Bao, Y., B. Ke, B. Li, Y. J. Yu and J. Zhang (2020). *JAR* 58(1): 199-235, with the 2022
 erratum at *JAR* 60(4): 1635-1646: the published benchmark this module is measured against.
@@ -41,29 +41,36 @@ the two PU estimators do not escape the trap above.
   else. That outcome would be an identity, not a finding about label noise, so Elkan-Noto is
   not in :data:`PU_ESTIMATORS`. It is kept for :func:`estimated_class_prior`, where the value of
   ``c_`` is the point and the ranking does not matter.
-- **Bagging PU is a separate arm only with a nonlinear base.** Its score is an average of
-  classifiers fitted on all positives against subsamples of the unlabeled pool, which is not a
-  monotone transform of the naive score. With a base that is linear in the features, though,
-  rebalancing mostly moves the intercept and the average of linear scores is linear again, so
-  the ranking stays close to the naive one. With a nonlinear base it ranks differently.
-  ``tests/test_pu_rank_arms.py`` checks both, and the Elkan-Noto identity above, on synthetic
-  data in which enforcement depends on firm size.
+- **On the rows it scores, bagging PU is the naive classifier, bagged.** Each round fits the
+  base classifier on every labelled row as class 1 against a draw of unlabeled rows as class
+  0 (by default as many as there are labelled rows, with replacement), and a scored row gets
+  the mean of the rounds' scores. That is balanced bagging with the unlabeled rows treated as
+  negatives, which is the naive label treatment. What makes the method PU, scoring each
+  unlabeled *training* row only by the rounds that left it out, plays no part when
+  :class:`forensics_core.eval.harness.PUDetector` scores held-out rows. So a naive arm bagged
+  the same way, with the same draws, gives the scored rows exactly the bagging arm's scores,
+  and the bagging arm's gap from a single-model naive arm measures resampling and
+  ensembling, not the label treatment. How big that gap is depends on how
+  unstable the base is, not on the label treatment and not on whether the base is linear:
+  with logistic regression or Gaussian naive Bayes the mean of the rounds ranks much as one
+  fit does, and with a shallow tree it does not, but then plain bagging of the same tree,
+  with every unflagged row a negative and no rebalancing, opens a gap of the same kind.
+  ``tests/test_pu_rank_arms.py`` checks each of these, and the Elkan-Noto identity above.
 - **Neither corrects a selection that depends on the firm.** Both estimators assume that the
   charged cases are a random draw from the misstatements. Under that assumption the
   probability of being charged and the probability of having misstated rank firm-years alike,
   so the naive arm already ranks by misstatement and there is nothing for a PU estimator to
-  correct; where the assumption fails, as trap 1 says it does, one constant cannot undo it.
-  Bagging with a base flexible enough to be consistent converges to the same ordering as the
-  naive arm too: each round sees the same labels with the classes rebalanced, and rebalancing
-  changes a consistent classifier's output only by a monotone transform. A difference between
-  the bagging arm and the naive arm is therefore a difference in how two estimators recover
-  one ordering from finite data. It is not a measurement of what the label noise costs, and a
-  tie is not a finding that it costs little.
+  correct. Where the assumption fails, as trap 1 says it does, one constant cannot undo it,
+  and neither can rebalancing, which changes how many of each class a round sees and not which
+  firm-years were charged. A gap between either PU estimator and a naive arm is therefore not
+  a measurement of what the label noise costs, and a tie is not a finding that it costs little.
 
-An arm that could rank differently for the reason trap 1 gives has to model the selection
-itself, for example by weighting with an estimated propensity to be charged. Which model of
-enforcement to use is an open decision, and no such estimator exists in
-:mod:`forensics_core.labels.pu` yet.
+So the choice of naive arm decides the bagging comparison before any data arrives: against a
+naive arm bagged the same way it ties exactly, and against a single model it measures what an
+ensemble does. Neither isolates the label treatment. An arm that could rank differently for
+the reason trap 1 gives has to model the selection itself, for example by weighting with an
+estimated propensity to be charged. Which model of enforcement to use is an open decision, and
+no such estimator exists in :mod:`forensics_core.labels.pu` yet.
 
 The target to match, and its provenance caveat
 ----------------------------------------------
@@ -84,8 +91,10 @@ import pandas as pd
 from forensics_core.eval.harness import Dataset, EvalReport, EvalSpec, TransferResult
 
 #: PU arms of the rank-metric comparison against the naive arm, by their name in
-#: :data:`forensics_core.eval.harness.DETECTOR_REGISTRY`. None of them may rank as the naive arm
-#: does; the module docstring says why Elkan-Noto does and is therefore not here.
+#: :data:`forensics_core.eval.harness.DETECTOR_REGISTRY`. None of them may score as a monotone
+#: transform of one naive fit of the shared base; the module docstring says why Elkan-Noto does
+#: and is therefore not here, and why a gap between bagging and the naive arm is still not a
+#: measurement of the label treatment.
 PU_ESTIMATORS: tuple[str, ...] = ("pu_bagging",)
 
 #: Registry names whose score is a monotone transform of a naive classifier's score under a
@@ -156,14 +165,18 @@ def naive_supervised_report(ds: Dataset, spec: EvalSpec) -> EvalReport:
     Raises
     ------
     NotImplementedError
-        Remaining: choose the base classifier so that the PU and naive arms differ only in the
-        label treatment, not in the model family. While bagging PU is the PU arm, the base has
-        to be nonlinear in the features: with a linear base the bagging arm ranks almost
-        exactly as this arm does (module docstring).
+        Remaining: choose the base classifier shared by both arms, and whether this arm is one
+        fit of it or is bagged the way the PU arm is. On the rows it scores, bagging PU is
+        balanced bagging of the base with the unlabeled rows treated as negatives, which is
+        this arm's label treatment. A naive arm bagged the same way ranks exactly as the
+        bagging arm does, and one fit of the base differs from it by resampling and ensembling
+        only, so neither form of this arm isolates the label treatment (module docstring).
     """
     raise NotImplementedError(
-        "Remaining: pick one base classifier shared by both arms so the comparison isolates "
-        "the label treatment; it must be nonlinear for the bagging arm to differ from this one."
+        "Remaining: choose the shared base classifier, and whether this arm is one fit or "
+        "bagged. On scored rows bagging PU is balanced bagging with unlabeled rows as "
+        "negatives, so a naive arm bagged the same way ranks identically and a single-model "
+        "arm differs only by resampling and ensembling; neither isolates the label treatment."
     )
 
 
@@ -203,16 +216,17 @@ def run_pu_benchmark(
 
 
 def estimated_class_prior(ds: Dataset, spec: EvalSpec | None = None) -> float:
-    """Elkan-Noto estimate of ``P(y=1)``: how much misstatement is never charged.
+    """Elkan-Noto estimate of ``P(y=1)``, the share of firm-years that misstate, charged or not.
 
     The gap between this and the observed AAER rate is an estimate of the enforcement
     selection, and it is arguably the most interesting quantity in the project -- it is the
     closest thing to a measurement of what the labels do not see, which is precisely the
     quantity that has no ground truth at all in the ``gosplan`` case.
 
-    This is the one place Elkan-Noto (:data:`CLASS_PRIOR_ESTIMATOR`) is used. Here the value
-    of ``c_`` is the estimate; in the rank comparison it would be a constant that changes no
-    order, which is why it is not one of :data:`PU_ESTIMATORS`.
+    This is the one place Elkan-Noto (:data:`CLASS_PRIOR_ESTIMATOR`) is used. ``c_`` estimates
+    the share of misstatement that gets charged, and the estimate of ``P(y=1)`` is built from
+    it, so here its value is the point; in the rank comparison it would be a constant that
+    changes no order, which is why it is not one of :data:`PU_ESTIMATORS`.
 
     Parameters
     ----------

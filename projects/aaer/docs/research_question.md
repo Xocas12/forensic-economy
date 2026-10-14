@@ -28,15 +28,18 @@ Sub-questions:
      rows, would be an identity and not a finding. It is out of the rank comparison and kept
      for the class prior, where the constant is the quantity of interest
      (`analysis/pu_benchmark.py`).
-   - **The PU arm that remains does not correct the selection either.** Bagging PU with a
-     nonlinear base does rank firm-years differently from the naive arm
-     (`tests/test_pu_rank_arms.py`, on synthetic data where enforcement depends on firm size).
-     But it assumes, as Elkan-Noto does, that charged cases are a random draw from the
-     misstatements. Under that assumption the probability of being charged and the probability
-     of having misstated already rank alike, so a gap between the arms measures how two
-     estimators recover the same ordering, not what the label selection costs. Measuring that
-     needs an arm that models the selection itself, for example a weighting by an estimated
-     propensity to be charged. Which model of the selection to use is an open decision.
+   - **The PU arm that remains does not test the label treatment either.** On the rows it
+     scores, bagging PU fits the base classifier many times on the charged firm-years against
+     draws of unflagged ones coded 0, and averages. That is balanced bagging with unflagged
+     rows treated as negatives, the treat-unflagged-as-clean label treatment. A naive arm
+     bagged the same way ranks firm-years exactly as it does. Against a single-model naive arm
+     it can rank differently, but that gap comes from resampling and ensembling: plain bagging
+     of the same base, with no PU in it, opens a gap of the same kind
+     (`tests/test_pu_rank_arms.py`). And it assumes, as Elkan-Noto does, that charged cases
+     are a random draw from the misstatements, which trap 1 denies. Measuring what the label
+     selection costs needs an arm that models the selection itself, for example a weighting by
+     an estimated propensity to be charged. Which model of the selection to use is an open
+     decision, and until one is chosen no arm of this comparison can answer the question.
 4. Which of the eight Beneish components and which of the bunching-at-the-notch features
    (earnings just meeting analyst consensus, just above zero, just above last year) carry the
    signal? These are the features that have analogues in the Soviet data.

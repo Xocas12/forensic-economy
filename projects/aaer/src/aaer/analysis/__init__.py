@@ -12,8 +12,10 @@ repository can have entered it without someone deciding to compute it.
 ``pu_benchmark``
     Positive-unlabeled learning against the treat-unflagged-as-clean formulation, measured
     against the corrected Bao et al. (2020) figures in ``docs/validation_anchors.md``. The PU
-    arm of the rank comparison is bagging PU (Mordelet and Vert 2014). Elkan and Noto (2008)
-    ranks firm-years exactly as the naive arm does, so it is used for the class prior only.
+    arm of the rank comparison is bagging PU (Mordelet and Vert 2014), which on the rows it
+    scores is balanced bagging of the naive classifier, so a gap between it and the naive arm
+    is not the label treatment. Elkan and Noto (2008) ranks firm-years exactly as the naive arm
+    does, so it is used for the class prior only.
 ``earnings_bunching``
     Excess mass at the earnings thresholds firms are rewarded for clearing. The feature family
     with a direct analogue in the Soviet plan-fulfilment data.
