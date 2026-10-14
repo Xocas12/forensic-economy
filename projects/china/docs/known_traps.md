@@ -27,6 +27,12 @@ frozen vintages.
 Provincial "GDP growth" is real growth at provincial deflators; the provincial-sum gap in
 nominal levels and in real growth rates behave differently. Never mix.
 
+That includes a proxy elasticity. Fitted on nominal levels it absorbs the deflator trend, and
+squared into the variance floor for real growth it flags honest provinces as too smooth. So
+`proxy_elasticities` defaults to the same real index as `growth_series`, records the outcome
+series and its price basis with every elasticity, and `proxy_implied_floor` refuses an
+elasticity whose price basis differs from the growth it is tested against.
+
 ## 5. Physical proxies have their own biases
 
 Electricity consumption tracks heavy industry, not services; the proxy relationship shifts as

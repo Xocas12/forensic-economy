@@ -34,6 +34,8 @@ from typing import Any
 
 import pandas as pd
 
+from china.analysis.proxies import PRICE_BASIS
+
 __all__ = [
     "growth_series",
     "proxy_implied_floor",
@@ -59,7 +61,9 @@ def growth_series(
     series : str, default "grp_index_preceding_year"
         Preferred source of growth. The published index at constant prices, minus 100, is the
         real growth rate the province itself reported; differencing ``grp_nominal`` gives
-        nominal growth and is a different quantity.
+        nominal growth and is a different quantity. Whatever is chosen here has to be passed
+        on as ``series`` to :func:`proxy_implied_floor`, which refuses an elasticity on
+        another price basis.
 
     Returns
     -------
@@ -85,6 +89,8 @@ def proxy_implied_floor(
     proxy_growth: pd.DataFrame,
     *,
     elasticity: float,
+    elasticity_outcome: str,
+    series: str = "grp_index_preceding_year",
 ) -> pd.Series:
     """Lower bound on the variance of reported growth implied by a physical driver.
 
@@ -101,6 +107,12 @@ def proxy_implied_floor(
     elasticity : float
         Elasticity of reported product with respect to the proxy, from
         :func:`china.analysis.proxies.proxy_elasticities`.
+    elasticity_outcome : str
+        The reported series the elasticity was estimated on: the ``outcome`` column of
+        :func:`china.analysis.proxies.proxy_elasticities`' output. Required, so that the
+        price basis of every elasticity is stated.
+    series : str, default "grp_index_preceding_year"
+        The series ``growth`` was built from, as passed to :func:`growth_series`.
 
     Returns
     -------
@@ -109,8 +121,14 @@ def proxy_implied_floor(
 
     Raises
     ------
+    ValueError
+        If ``elasticity_outcome`` and ``series`` are on different price bases in
+        :data:`china.analysis.proxies.PRICE_BASIS`, or either has no recorded basis. A
+        nominal elasticity squared against real growth raises the floor by about the square
+        of (real growth + inflation) / real growth, and flags honest provinces as too smooth
+        (``docs/known_traps.md`` trap 4).
     NotImplementedError
-        Always.
+        Otherwise, always.
 
     Notes
     -----
@@ -120,6 +138,11 @@ def proxy_implied_floor(
     nothing. That is a limitation of the test, not a clean bill of health, and must be
     reported as such.
     """
+    # The price-basis refusal runs before the stub raises, so it is in force already. A
+    # missing outcome is let through only because nothing below computes yet; the
+    # implementation must refuse it as well.
+    if elasticity_outcome is not None:
+        _require_same_price_basis(elasticity_outcome, series)
     raise NotImplementedError(
         "needs a proxy elasticity; and the bound holds only under the stated independence "
         "assumption, which must be reported with any result"
@@ -222,3 +245,19 @@ def smoothness_by_province(
         "needs growth_series; with about ten annual observations per province the "
         "permutation distribution is coarse and that has to be reported"
     )
+
+
+def _require_same_price_basis(elasticity_outcome: str, series: str) -> None:
+    """Raise ``ValueError`` unless the elasticity and the tested growth share a price basis."""
+    for role, name in (("elasticity_outcome", elasticity_outcome), ("series", series)):
+        if name not in PRICE_BASIS:
+            raise ValueError(
+                f"{role}={name!r} has no recorded price basis; known series: {sorted(PRICE_BASIS)}"
+            )
+    if PRICE_BASIS[elasticity_outcome] != PRICE_BASIS[series]:
+        raise ValueError(
+            f"price basis mismatch: the elasticity was estimated on {elasticity_outcome!r} "
+            f"({PRICE_BASIS[elasticity_outcome]}) but the growth tested against it is "
+            f"{series!r} ({PRICE_BASIS[series]}); nominal and real must never be mixed "
+            "(docs/known_traps.md trap 4)"
+        )
