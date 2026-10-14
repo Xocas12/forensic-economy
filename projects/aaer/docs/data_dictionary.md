@@ -251,8 +251,12 @@ Arithmetic on the counts recorded in `SOURCES.yaml`, not a result of any analysi
 
 - **`fy` vs the fiscal year of a violation.** `sub.fy` is the fiscal year of a *filing*.
   `YEARA` is the fiscal year of a *misstatement*. An AAER's release date is a third thing
-  again, usually years later. Splits must use the violation year; letting a release issued
-  after the test cutoff influence training is exactly the leakage the 2022 erratum was about.
+  again, usually years later. Splits must use the violation year. Letting a release issued
+  after the test cutoff influence training is a leakage of its own (`known_traps.md`, trap 3),
+  but it is not what the 2022 erratum was about: that was serial-fraud cases spanning the
+  train/test boundary left unrecoded in training. The published benchmark keeps the ex-post
+  labels, so the like-for-like replication does too and the release-censored run is reported
+  separately (`validation_anchors.md`, "Replication protocol").
 - **`adsh` vs `cik`.** `adsh` identifies one filing; `cik` identifies the firm. Lagging and
   grouped splits use `cik`.
 - **`p_aaer` vs `aaer_number`.** `p_aaer` is a *case* identifier in the Bao et al. files that

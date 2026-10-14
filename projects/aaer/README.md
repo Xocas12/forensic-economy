@@ -91,7 +91,10 @@ Targets and their provenance are in [docs/validation_anchors.md](docs/validation
    quoting the erratum, because the erratum itself is paywalled and Wiley returns 403 to
    scripts. Walker's own re-runs got 8 hits in both windows rather than 9 and 10. Getting that
    PDF through the university subscription is the highest-value human action open to this
-   project.
+   project. Each window figure is a mean of per-test-year runs, each retrained on 1991 to two
+   years before its test year, with the authors' ex-post labels; one pooled temporal fold is
+   a different estimand. The protocol is spelt out under "Replication protocol" in
+   validation_anchors.md.
 
 ## The trap that decides the analysis
 

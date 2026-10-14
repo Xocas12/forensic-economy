@@ -35,6 +35,43 @@ windows with the same labels, and the coverage problem in ``data/ACCESS_NOTES.md
 is only attempted on the Bao et al. CSV, not on the SEC path.
 
 The original (pre-erratum) figures are **not** the target. Do not compare to them.
+
+The protocol to replicate: per test year, not one pooled fold
+-------------------------------------------------------------
+The window figures are not the score of one model on a pooled test set. The authors' posted
+code (``run_RUSBoost.m`` and ``evaluate.m`` in JarFraud/FraudDetection, read at commit
+2d10bc6; ``docs/validation_anchors.md``, "Replication protocol") loops over test years and,
+for each test year ``t``:
+
+1. **retrains** on fiscal years :data:`BAO_TRAIN_START` .. ``t - BAO_GAP_YEARS``, i.e. 1991 to
+   ``t - 2``, so there is a two-year gap between the last training year and the test year;
+2. **recodes serial frauds per test year**: every training row whose ``p_aaer`` is among the
+   ``p_aaer`` values of year ``t``'s positives is set to 0 before fitting;
+3. **scores year t alone**, with ``k`` for the ``@k`` metrics computed on year ``t``'s row
+   count as ``round(BAO_K_FRACTION * n)``, MATLAB ``round``, which rounds halves away from
+   zero (:data:`BAO_K_ROUNDING`).
+
+The code stops at per-year output; a window's figure is the **unweighted mean of the per-year
+figures** over its years. For AUC that is checked: Walker's per-year AUCs (2003 0.7281, 2004
+0.7646, 2005 0.7289, 2006 0.7590, 2007 0.7176, 2008 0.6280; ``data/SOURCES.yaml``,
+``ejw_walker_2022``) average to 0.7405 and 0.7210, the Run(1) window figures of his Table 2.
+For NDCG@1% the mean is assumed the same way and for hits the window total is assumed to be
+the sum; neither is checked against a per-year table. The single ``split="temporal"`` fold of
+:class:`forensics_core.eval.harness.EvalSpec` -- train on ``time <= train_end``, test on every
+later row pooled, no gap, no window end -- is **not** this design, whatever the harness
+docstring says, and a result from it is a different estimand from the 0.7428 target. The
+like-for-like run is therefore a loop of per-test-year datasets, one
+:func:`~forensics_core.eval.harness.evaluate` call each, with ``k`` passed as the integer
+above: the harness turns a float fraction into ``ceil(k * n)``, which is one more than
+Bao's ``round`` whenever ``k * n`` has a fractional part strictly between 0 and 0.5.
+
+**Labels for the like-for-like run** (:data:`BAO_LIKE_FOR_LIKE_LABELS`): the ``misstate``
+labels of the pinned Bao et al. CSV as they stand, i.e. the authors' ex-post labels, built
+from AAERs released through 31 December 2018, years after every test year. That is what
+"the same labels" in ``docs/validation_anchors.md`` means. A release-censored variant, which
+drops labels whose AAER was released after the test cutoff (``docs/known_traps.md``, trap 3),
+is a different measurement; it is reported **separately** and never compared with the 0.7428
+target. It needs ``p_aaer`` mapped to release dates first, because the Bao CSV carries none.
 """
 
 from __future__ import annotations
@@ -45,8 +82,29 @@ from forensics_core.eval.harness import Dataset, EvalReport, EvalSpec, TransferR
 #: PU estimators compared, by their name in :data:`forensics_core.eval.harness.DETECTOR_REGISTRY`.
 PU_ESTIMATORS: tuple[str, ...] = ("pu_elkan_noto", "pu_bagging")
 
-#: Test windows used by the published benchmark, so that any comparison is like for like.
+#: Test windows used by the published benchmark, as inclusive (first, last) test years. Each
+#: window is a set of per-year runs whose metrics are averaged, not one pooled test set; see
+#: the module docstring, "The protocol to replicate".
 BAO_TEST_WINDOWS: tuple[tuple[int, int], ...] = ((2003, 2005), (2003, 2008))
+
+#: First fiscal year of every training set in the published benchmark's per-year loop.
+BAO_TRAIN_START: int = 1991
+
+#: Years between the last training year and the test year: test year ``t`` trains on
+#: ``BAO_TRAIN_START .. t - BAO_GAP_YEARS``.
+BAO_GAP_YEARS: int = 2
+
+#: ``k`` for the ``@k`` metrics as a fraction of the test year's firm-years.
+BAO_K_FRACTION: float = 0.01
+
+#: How ``BAO_K_FRACTION * n`` becomes an integer ``k``: MATLAB ``round``, halves away from
+#: zero. Not Python's ``round`` (halves to even) and not the harness's ``ceil``.
+BAO_K_ROUNDING: str = "half_away_from_zero"
+
+#: The label set of the like-for-like replication: the pinned Bao et al. CSV's ``misstate``
+#: as it stands (ex-post, AAERs released through 2018). The release-censored variant is
+#: reported separately and is never compared with the published target.
+BAO_LIKE_FOR_LIKE_LABELS: str = "bao_ex_post"
 
 
 def build_dataset(features: pd.DataFrame, labels: pd.DataFrame, *, source: str) -> Dataset:
@@ -88,7 +146,8 @@ def naive_supervised_report(ds: Dataset, spec: EvalSpec) -> EvalReport:
     """The comparison arm: unlabeled firm-years treated as negatives.
 
     This is the formulation the literature mostly uses. It is included to be beaten, or not, on
-    the same split and the same metrics.
+    the same per-test-year protocol and the same metrics (module docstring, "The protocol to
+    replicate").
 
     Parameters
     ----------
@@ -120,29 +179,45 @@ def run_pu_benchmark(
 ) -> pd.DataFrame:
     """Score every PU estimator and the naive arm on one dataset.
 
+    The published benchmark's protocol, which this function replicates (module docstring,
+    "The protocol to replicate"): for each test year ``t`` in a window of
+    :data:`BAO_TEST_WINDOWS`, retrain on fiscal years :data:`BAO_TRAIN_START` ..
+    ``t - BAO_GAP_YEARS`` (a two-year gap), recode to 0 every training row whose ``p_aaer`` is
+    among year ``t``'s positive cases, score year ``t`` alone with an integer
+    ``k = round(BAO_K_FRACTION * n_t)`` rounded halves away from zero, then average the
+    per-year metrics over the window. One pooled ``split="temporal"`` fold is not this design.
+
     Parameters
     ----------
     ds : Dataset
-        From :func:`build_dataset`.
+        From :func:`build_dataset`, with the labels named by :data:`BAO_LIKE_FOR_LIKE_LABELS`
+        for the like-for-like run.
     spec : EvalSpec, optional
-        Defaults to the temporal split matching :data:`BAO_TEST_WINDOWS` with k = 1 per cent.
+        Metrics for each per-year :func:`~forensics_core.eval.harness.evaluate` call. Its
+        split does not choose the training years, which the per-year loop above fixes, and
+        its ``ks`` is replaced, per test year, by the integer ``k`` above.
     estimators : tuple of str, default :data:`PU_ESTIMATORS`
         Detector registry names to run.
 
     Returns
     -------
     pandas.DataFrame
-        One row per (estimator, test window) with AUC, average precision, NDCG@1% and
-        precision@1%, the number of test positives, and the test-period base rate.
+        One row per (estimator, test year) with AUC, average precision, NDCG@1% and
+        precision@1%, ``k``, the hits in the top ``k``, the number of test positives and the
+        test-year base rate; and one row per (estimator, test window) with the unweighted
+        mean of the per-year AUC and NDCG@1% and the summed hits, the aggregation the
+        published window figures are read as.
 
     Raises
     ------
     NotImplementedError
-        Remaining: everything below the harness call -- the estimators exist and are tested in
-        forensics_core; what is missing is the dataset and the split.
+        Remaining: everything below the harness calls -- the estimators exist and are tested
+        in forensics_core; what is missing is the dataset and the per-test-year loop.
     """
     raise NotImplementedError(
-        "Remaining: build the dataset and the temporal split, then call evaluate() per window."
+        "Remaining: build the dataset and the per-test-year loop (train 1991..t-2, recode "
+        "serial frauds against year t, score t alone with k = round(0.01 n)), then call "
+        "evaluate() per test year and average over each window."
     )
 
 
