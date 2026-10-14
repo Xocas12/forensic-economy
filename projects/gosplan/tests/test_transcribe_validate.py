@@ -277,6 +277,117 @@ def test_a_suspected_decimal_shift_is_flagged_as_a_warning_not_an_error():
     assert report.ok, "a real order-of-magnitude jump must not be erased by the validator"
 
 
+# A five-year series with one cell read ten times too large ('10,8' typed as 108 and then
+# 1080 is the same misread one place further along). The median is 112, so 1080 is 9.6 times
+# it, inside the 5% slack around 10.
+_SHIFTED_SERIES = (
+    ("1981", "100"),
+    ("1982", "104"),
+    ("1983", "1080"),
+    ("1984", "112"),
+    ("1985", "115"),
+)
+
+
+def _shift_warnings(report):
+    return [i for i in report.issues if i.code == "decimal_shift_suspected"]
+
+
+def test_decimal_shift_is_flagged_when_the_year_is_recorded_only_in_period():
+    rows = [
+        _base_row(column_label="Output", period=year, value_raw=raw, value=raw)
+        for year, raw in _SHIFTED_SERIES
+    ]
+    report = validate_rows(rows)
+    flagged = _shift_warnings(report)
+    assert [i.row for i in flagged] == [3]
+    assert report.ok
+
+
+@pytest.mark.parametrize("head", ["{year}", "{year} \u0433.", "{year} g."])
+def test_decimal_shift_is_flagged_when_years_are_printed_as_column_heads(head):
+    """The schema says to enter the column head as printed, which here is the year itself.
+
+    Keying the series on (row_label, column_label) made every year its own one-cell series,
+    so the check never ran on this layout.
+    """
+    rows = [
+        _base_row(
+            row_label="Tractors",
+            column_label=head.format(year=year),
+            period=year,
+            value_raw=raw,
+            value=raw,
+        )
+        for year, raw in _SHIFTED_SERIES
+    ]
+    report = validate_rows(rows)
+    flagged = _shift_warnings(report)
+    assert [i.row for i in flagged] == [3]
+    assert "Tractors" in flagged[0].message
+    assert report.ok
+
+
+def test_decimal_shift_is_flagged_when_years_are_printed_as_row_stubs():
+    rows = [
+        _base_row(row_label=year, column_label="Tractors", period=year, value_raw=raw, value=raw)
+        for year, raw in _SHIFTED_SERIES
+    ]
+    report = validate_rows(rows)
+    flagged = _shift_warnings(report)
+    assert [i.row for i in flagged] == [3]
+    assert "Tractors" in flagged[0].message
+    assert report.ok
+
+
+def test_decimal_shift_is_flagged_per_republic_in_a_table_with_year_columns_and_no_total():
+    """Several republics by five year columns, one planted x10 cell, nothing printed as a total.
+
+    No total covers the shifted cell, so total_mismatch cannot see it; this check is the only
+    one that can.
+    """
+    levels = {"RSFSR": 1000.0, "Ukrainian SSR": 400.0, "Byelorussian SSR": 90.0}
+    rows = []
+    for republic, level in levels.items():
+        for k, year in enumerate(("1981", "1982", "1983", "1984", "1985")):
+            value = level * (1 + 0.02 * k)
+            if republic == "Ukrainian SSR" and year == "1984":
+                value *= 10
+            raw = f"{value:g}"
+            rows.append(
+                _base_row(
+                    row_label=republic,
+                    column_label=year,
+                    period=year,
+                    value_raw=raw,
+                    value=raw,
+                )
+            )
+    report = validate_rows(rows)
+    flagged = _shift_warnings(report)
+    assert len(flagged) == 1
+    shifted = rows[flagged[0].row - 1]
+    assert (shifted["row_label"], shifted["period"]) == ("Ukrainian SSR", "1984")
+    assert report.ok
+
+
+def test_dropping_the_year_label_does_not_merge_different_variables_into_one_series():
+    """Two products ten times apart in level, years as column heads: no cell is misread.
+
+    If the series key dropped both labels, the two rows would pool into one series and the
+    larger product would be flagged against the smaller one's median.
+    """
+    rows = []
+    for label, level in (("Tractors", 100.0), ("Combines", 1000.0), ("Trucks", 1010.0)):
+        for k, year in enumerate(("1981", "1982", "1983", "1984", "1985")):
+            raw = f"{level + k:g}"
+            rows.append(
+                _base_row(row_label=label, column_label=year, period=year, value_raw=raw, value=raw)
+            )
+    report = validate_rows(rows)
+    assert _shift_warnings(report) == []
+
+
 def test_an_empty_file_is_an_error_rather_than_a_silent_pass():
     report = validate_rows([])
     assert not report.ok

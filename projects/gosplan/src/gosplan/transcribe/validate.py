@@ -88,6 +88,12 @@ _DECIMAL_SHIFT_MIN_SERIES = 4
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PERIOD_RE = re.compile(r"^(\d{4})(?:-(\d{4})|/(\d{2}))?$")
 
+#: Pieces of a printed year head that are not part of the period: any hyphen or dash (with
+#: the spaces around it) between two years, and a trailing Cyrillic 'g.' / 'gg.' (goda, 'year'
+#: / 'years') or its transliteration.
+_DASH_RE = re.compile("\\s*[-\u2010-\u2015\u2212]\\s*")
+_YEAR_SUFFIX_RE = re.compile("\\s*(?:\u0433\u0433?|gg?)\\.?\\s*$", re.IGNORECASE)
+
 
 @dataclass(frozen=True)
 class Issue:
@@ -475,16 +481,56 @@ def _check_totals(
                 )
 
 
+def _label_encodes_period(label: str, period: str) -> bool:
+    """True when a row stub or column head is just the cell's period, as printed.
+
+    Tables print years as heads in several spellings (a bare '1985', '1985' followed by the
+    Cyrillic abbreviation for 'year', a plan period with an en dash and 'years'), and
+    transcribers enter them as printed. A label counts as the period when, after normalising
+    dashes, dropping that trailing abbreviation (or its transliteration 'g.' / 'gg.') and
+    removing spaces, it parses to the same years as ``period``.
+    """
+    years = _period_years(period)
+    if not years:
+        return False
+    text = _DASH_RE.sub("-", label.strip())
+    text = _YEAR_SUFFIX_RE.sub("", text).replace(" ", "")
+    return _period_years(text) == years
+
+
+def _series_key(row: Mapping[str, Any]) -> tuple[str | None, str | None]:
+    """The series a cell belongs to for the decimal-shift check.
+
+    A series is one variable followed across periods. When the year is recorded only in
+    ``period`` that is (row_label, column_label). When the table prints the years as column
+    heads or row stubs, the label holding the year is dropped (None), or every year would be
+    a series of its own and the check could never run.
+    """
+    row_label, column_label, period = cell_key(row)
+    return (
+        None if _label_encodes_period(row_label, period) else row_label,
+        None if _label_encodes_period(column_label, period) else column_label,
+    )
+
+
+def _describe_series(key: tuple[str | None, str | None]) -> str:
+    parts = [
+        f"{axis} {label!r}"
+        for axis, label in zip(("row", "column"), key, strict=True)
+        if label is not None
+    ]
+    return ", ".join(parts) + " across periods" if parts else "the whole table across periods"
+
+
 def _check_decimal_shift(
     rows: Sequence[Mapping[str, Any]], parsed: Mapping[int, Any], issues: list[Issue]
 ) -> None:
-    series: dict[tuple[str, str], list[int]] = defaultdict(list)
+    series: dict[tuple[str | None, str | None], list[int]] = defaultdict(list)
     for i, row in enumerate(rows, start=1):
         if getattr(parsed.get(i), "kind", "") == "number":
-            key = cell_key(row)
-            series[(key[0], key[1])].append(i)
+            series[_series_key(row)].append(i)
 
-    for (row_label, column_label), members in sorted(series.items()):
+    for key, members in sorted(series.items(), key=lambda kv: kv[1][0]):
         values = [abs(parsed[i].value) for i in members if parsed[i].value]
         if len(values) < _DECIMAL_SHIFT_MIN_SERIES:
             continue
@@ -505,7 +551,7 @@ def _check_decimal_shift(
                             "warning",
                             "decimal_shift_suspected",
                             f"{parsed[i].value:g} is about {target:g} times the median "
-                            f"{median:g} of series ({row_label!r}, {column_label!r}); check the "
+                            f"{median:g} of its series ({_describe_series(key)}); check the "
                             "decimal mark and the thousands separator on the page",
                             i,
                             "value_raw",
