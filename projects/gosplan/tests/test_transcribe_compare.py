@@ -142,31 +142,155 @@ def test_a_dropped_digit_is_counted_conservatively():
 # ------------------------------------------------------------------ the digit-test gate
 
 
+FIRST_DIGIT = {"positions": (1,), "align": "leading"}
+
+
 def test_the_gate_passes_only_below_the_threshold_the_caller_states(report):
-    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.10) is True
-    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.01) is False
+    """Position 1 of the fixture pair disagrees in 1 cell of 12 (8.3 percent)."""
+    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.10, **FIRST_DIGIT) is True
+    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.01, **FIRST_DIGIT) is False
+
+
+def test_the_gate_reads_the_position_the_test_reads_not_the_pooled_rate(report):
+    """Position 3 disagrees in 2 of 12 cells; the pooled rate (4/48) would pass at 0.10."""
+    assert report.digit_disagreement_rate < 0.10
+    assert (
+        digit_tests_permitted(
+            report, max_digit_disagreement_rate=0.10, positions=(3,), align="leading"
+        )
+        is False
+    )
+    assert (
+        digit_tests_permitted(
+            report, max_digit_disagreement_rate=0.10, positions=(1, 3), align="leading"
+        )
+        is False
+    ), "the worst of the requested positions decides"
 
 
 def test_the_gate_refuses_a_comparison_that_compared_nothing():
     empty = compare_transcriptions([], [])
     with pytest.raises(ValueError, match="no evidence"):
-        digit_tests_permitted(empty, max_digit_disagreement_rate=0.5)
+        digit_tests_permitted(empty, max_digit_disagreement_rate=0.5, **FIRST_DIGIT)
 
 
 def test_the_gate_refuses_an_impossible_threshold(report):
     with pytest.raises(ValueError, match=r"\[0, 1\]"):
-        digit_tests_permitted(report, max_digit_disagreement_rate=1.5)
+        digit_tests_permitted(report, max_digit_disagreement_rate=1.5, **FIRST_DIGIT)
 
 
 def test_the_gate_fails_when_the_two_readings_do_not_cover_the_same_cells(fixtures_dir):
     rows_a = read_filled(fixtures_dir / PAIR_A)
     rows_b = read_filled(fixtures_dir / PAIR_B)[:-1]
     partial = compare_transcriptions(rows_a, rows_b)
-    assert digit_tests_permitted(partial, max_digit_disagreement_rate=0.5) is False
+    assert digit_tests_permitted(partial, max_digit_disagreement_rate=0.5, **FIRST_DIGIT) is False
     assert (
-        digit_tests_permitted(partial, max_digit_disagreement_rate=0.5, require_full_coverage=False)
+        digit_tests_permitted(
+            partial, max_digit_disagreement_rate=0.5, require_full_coverage=False, **FIRST_DIGIT
+        )
         is True
     )
+
+
+def _cells(values):
+    return [
+        {"row_label": f"Oblast {i}", "column_label": "Output", "period": "1980", "value_raw": v}
+        for i, v in enumerate(values)
+    ]
+
+
+def _misread(values, n, position):
+    """Change the digit at ``position`` (0 = first printed, -1 = last) in the first n values."""
+    out = list(values)
+    for i in range(n):
+        v = out[i]
+        idx = position % len(v)
+        out[i] = v[:idx] + str((int(v[idx]) + 1) % 10 or 1) + v[idx + 1 :]
+    return out
+
+
+def test_the_gate_refuses_five_digit_cells_with_3_percent_leading_misreads():
+    """100 five-digit cells, 3 of them read with a different leading digit and nothing else.
+
+    The pooled rate is 3/500 = 0.6 percent, under a 1 percent threshold; the first-digit
+    rate is 3/100 = 3 percent, three times over it.
+    """
+    values = [str(20000 + 37 * i) for i in range(100)]
+    report = compare_transcriptions(_cells(values), _cells(_misread(values, 3, 0)))
+    assert report.digit_disagreement_rate == pytest.approx(3 / 500)
+    first = next(p for p in report.by_position if p.position == 1)
+    assert (first.n_compared, first.n_disagreements) == (100, 3)
+    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.01, **FIRST_DIGIT) is False
+
+
+def test_the_gate_refuses_four_digit_cells_with_2_percent_leading_misreads():
+    values = [str(1000 + 7 * i) for i in range(1000)]
+    report = compare_transcriptions(_cells(values), _cells(_misread(values, 20, 0)))
+    assert report.digit_disagreement_rate == pytest.approx(20 / 4000)
+    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.01, **FIRST_DIGIT) is False
+
+
+def test_the_gate_refuses_terminal_misreads_for_a_terminal_digit_test():
+    values = [str(20000 + 37 * i) for i in range(100)]
+    report = compare_transcriptions(
+        _cells(values), _cells(_misread(values, 3, -1)), align="trailing"
+    )
+    assert report.digit_disagreement_rate == pytest.approx(3 / 500)
+    assert (
+        digit_tests_permitted(
+            report, max_digit_disagreement_rate=0.01, positions=(1,), align="trailing"
+        )
+        is False
+    )
+
+
+def test_leading_alignment_starts_at_the_first_significant_digit():
+    """'0,06' against '0,07': the padding zeros are not the first digit a test reads."""
+    report = compare_transcriptions(_cells(["0,06"]), _cells(["0,07"]))
+    counts = {p.position: (p.n_compared, p.n_disagreements) for p in report.by_position}
+    assert counts == {1: (1, 1)}
+    (cell,) = report.disagreements
+    assert (cell.digits_a, cell.digits_b) == ("6", "7")
+
+
+def test_the_gate_refuses_sub_unit_cells_whose_every_significant_digit_differs():
+    """20 cells printed '0,x', every one read with a different x: the first digit is 100 percent wrong."""
+    values_a = [f"0,{1 + i % 8}" for i in range(20)]
+    values_b = [f"0,{2 + i % 8}" for i in range(20)]
+    report = compare_transcriptions(_cells(values_a), _cells(values_b))
+    first = next(p for p in report.by_position if p.position == 1)
+    assert (first.n_compared, first.n_disagreements) == (20, 20)
+    assert digit_tests_permitted(report, max_digit_disagreement_rate=0.5, **FIRST_DIGIT) is False
+
+
+def test_trailing_alignment_still_compares_every_printed_digit():
+    """A terminal-digit test reads the printed string from the right, padding included."""
+    report = compare_transcriptions(_cells(["0,06"]), _cells(["0,07"]), align="trailing")
+    counts = {p.position: (p.n_compared, p.n_disagreements) for p in report.by_position}
+    assert counts == {1: (1, 1), 2: (1, 0), 3: (1, 0)}
+
+
+def test_the_gate_requires_positions_in_the_reports_own_alignment(report):
+    with pytest.raises(ValueError, match="aligned 'leading'"):
+        digit_tests_permitted(
+            report, max_digit_disagreement_rate=0.5, positions=(1,), align="trailing"
+        )
+
+
+@pytest.mark.parametrize("positions", [(), (0,), (-1,), (1.0,), (True,)])
+def test_the_gate_refuses_positions_that_name_no_digit(report, positions):
+    with pytest.raises(ValueError, match="position"):
+        digit_tests_permitted(
+            report, max_digit_disagreement_rate=0.5, positions=positions, align="leading"
+        )
+
+
+def test_the_gate_refuses_a_position_nothing_was_compared_at(report):
+    """The fixture values have four digits; a fifth-position rate of zero is no evidence."""
+    with pytest.raises(ValueError, match="no evidence"):
+        digit_tests_permitted(
+            report, max_digit_disagreement_rate=0.5, positions=(5,), align="leading"
+        )
 
 
 def test_the_report_serialises_with_both_rates(report):

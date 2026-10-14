@@ -150,8 +150,10 @@ transcription. Two independent readings of the same table are compared with
 - **cell disagreement rate**, the share of jointly transcribed cells read differently at all;
 - **digit disagreement rate, per position**, which is what a digit test actually consumes.
 
-Digits are aligned from the most significant end by default, because that is the position a
-Benford-type test reads. Where two readings differ in length, every position past the shorter
+Digits are aligned from the first significant digit by default, because that is the position
+a Benford-type test reads; the zeros that pad a value below one (`0,06`) are skipped, as the
+test skips them. `--align trailing` counts from the last printed digit instead, for a
+terminal-digit test. Where two readings differ in length, every position past the shorter
 string counts as compared and disagreeing: a dropped digit displaces everything after it, and
 counting it any other way would understate the damage.
 
@@ -159,7 +161,11 @@ counting it any other way would understate the damage.
 transcription error rate in this setting, and inventing one would be exactly the kind of
 borrowed number this programme refuses. `digit_tests_permitted` requires the threshold as an
 argument, so whoever runs a digit test has to write down what they consider acceptable and
-defend it next to the result.
+defend it next to the result. It also requires the digit positions the test reads
+(`positions=(1,)` with leading alignment for a first-digit test, `(1,)` with trailing alignment
+for a terminal-digit test) and compares the worst of those positions' rates with the
+threshold. The pooled rate over all positions is an average and understates the error at the
+position the test reads whenever errors are not spread evenly, so the gate does not use it.
 
 The third source of a second reading, where one exists, is not a second person: the Hokkaido
 SRC series are an independent existing transcription of the same Narkhoz tables and can be
