@@ -69,6 +69,15 @@ template cannot drift from what the validator enforces.
 | `confidence` | enum | yes | see below |
 | `notes` | string | no | anything a second transcriber would need |
 
+**Years printed as heads.** Many tables print the years themselves as the column heads, or
+as the row stubs. Enter them as printed anyway: `column_label` (or `row_label`) holds the
+year as the page shows it, and `period` holds the same period in the usual form. The validator
+recognises a label that is only the cell's period (allowing a trailing `g.` / `gg.` for
+"year(s)", in Cyrillic or transliterated, and any dash between the years of a plan period)
+and treats the other label as the name of the series. A table with the variable in the
+column head and the year only in `period` works the same way. Do not invent a variable name
+to put in place of a printed year.
+
 ### `confidence`
 
 The last three values are not degrees of doubt. They record what was printed.
@@ -135,9 +144,13 @@ a bound of `(n + 1) * 0.5 * 10**-d`. A total whose addends are not all numbers i
 `total_unchecked` rather than silently skipped.
 
 **Distributional.** A value about ten, a hundred, a tenth or a hundredth of its own series
-median is flagged `decimal_shift_suspected`. This is the only check that can fire on a correct
-transcription, so it is a warning: a real order-of-magnitude jump in a Soviet series is
-interesting and the validator must not be able to erase it.
+median is flagged `decimal_shift_suspected`. A series is one variable followed across
+periods: the cells sharing `row_label` and `column_label`, except that a label which is only
+the cell's period (years printed as column heads or row stubs) is left out of the key, so a
+table laid out either way is checked. A series needs at least four non-zero figures. This is
+the only check that can fire on a correct transcription, so it is a warning: a real
+order-of-magnitude jump in a Soviet series is interesting and the validator must not be able
+to erase it.
 
 ---
 
