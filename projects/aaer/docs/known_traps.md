@@ -5,8 +5,18 @@
 The SEC pursues cases that are detectable, large and litigable. A model trained on AAERs
 learns *what gets prosecuted*, not *what happens*. Consequences:
 
-- Unflagged firm-years are **unlabeled, not negative**. Use `forensics_core.labels.pu`
-  (Elkan–Noto, bagging PU) rather than a classifier that treats them as clean.
+- Unflagged firm-years are **unlabeled, not negative**. `forensics_core.labels.pu` (Elkan–Noto,
+  bagging PU) is written for that case, but under rank metrics (trap 2) neither estimator gets
+  a model out of this trap. Elkan–Noto's score is the treat-as-clean classifier's divided by
+  one constant, so it ranks firm-years exactly as that classifier does; it is not an arm of the
+  rank comparison and is used only for the class prior. Its constant estimates the share of
+  misstatement that gets charged, and the gap between the misstatement rate it implies and the
+  observed AAER rate is the misstatement never charged. Bagging PU, on the rows it scores, is
+  balanced bagging of the treat-as-clean classifier, so a naive arm bagged the same way ranks
+  exactly as it does, and a gap from a single naive model measures the ensemble, not the label
+  treatment. Both assume charged cases are a random draw from the misstatements, which is what
+  this trap says is false, so neither undoes a selection that depends on the firm. That needs
+  a model of the selection itself.
 - Performance measured against AAER labels is performance at predicting enforcement.
   Say so in every table.
 
