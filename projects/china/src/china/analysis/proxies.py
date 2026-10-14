@@ -30,11 +30,14 @@ number is asserted here.
 
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import Any
 
 import pandas as pd
 
 __all__ = [
+    "ELASTICITY_COLUMNS",
+    "PRICE_BASIS",
     "PROXY_SERIES",
     "keqiang_index",
     "proxy_elasticities",
@@ -52,11 +55,39 @@ PROXY_SERIES: tuple[str, ...] = (
     "nightlights_dn_sum",
 )
 
+#: Price basis of each reported product series. Nominal levels and real growth are different
+#: quantities and must never be mixed (``docs/known_traps.md`` trap 4), and that holds for an
+#: elasticity as much as for a gap: one estimated on ``grp_nominal`` levels absorbs the
+#: deflator trend, so applied to real growth it overstates the variance floor and flags honest
+#: provinces as too smooth. The real level series, where one is needed, is chained from the
+#: index, because the registry has no provincial deflator.
+PRICE_BASIS: MappingProxyType[str, str] = MappingProxyType(
+    {
+        "grp_nominal": "nominal",
+        "gdp_national_nominal": "nominal",
+        "grp_index_preceding_year": "real",
+    }
+)
+
+#: Columns of :func:`proxy_elasticities`' output, one row per province. ``outcome`` and
+#: ``price_basis`` travel with every elasticity so that
+#: :func:`china.analysis.dispersion.proxy_implied_floor` can refuse one estimated on a
+#: different price basis from the growth it is tested against.
+ELASTICITY_COLUMNS: tuple[str, ...] = (
+    "province",
+    "elasticity",
+    "se",
+    "n_obs",
+    "years",
+    "outcome",
+    "price_basis",
+)
+
 
 def proxy_elasticities(
     panel: pd.DataFrame,
     *,
-    outcome: str = "grp_nominal",
+    outcome: str = "grp_index_preceding_year",
     proxy: str,
     vintage: str,
     within_province: bool = True,
@@ -67,8 +98,14 @@ def proxy_elasticities(
     ----------
     panel : pandas.DataFrame
         Tidy panel.
-    outcome : str, default "grp_nominal"
-        Reported series.
+    outcome : str, default "grp_index_preceding_year"
+        Reported series, a key of :data:`PRICE_BASIS`. The default is the published index at
+        constant prices, the same real series
+        :func:`china.analysis.dispersion.growth_series` defaults to, so that the default
+        elasticity and the default growth series share a price basis. With it the elasticity
+        is of real product, estimated on real growth or on the real level chained from the
+        index. ``grp_nominal`` gives a nominal elasticity, which is valid only against nominal
+        growth: fitted on nominal levels within a province it absorbs the deflator trend.
     proxy : str
         One of :data:`PROXY_SERIES`.
     vintage : str
@@ -81,8 +118,10 @@ def proxy_elasticities(
     Returns
     -------
     pandas.DataFrame
-        One row per province with the elasticity, its standard error, the sample size and the
-        years used.
+        One row per province, with the columns in :data:`ELASTICITY_COLUMNS`: the
+        elasticity, its standard error, the sample size, the years used, ``outcome``, the
+        reported series it was estimated on, and ``price_basis``, that series' entry in
+        :data:`PRICE_BASIS`.
 
     Raises
     ------
