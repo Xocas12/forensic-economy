@@ -13,9 +13,11 @@ Two forms of the test, both in :mod:`forensics_core.dispersion`.
 one-sided: the alternative of interest is *less* variance than the floor.
 
 **Smoothness.** The von Neumann ratio -- mean squared successive difference over variance --
-is about 2 for independent noise and falls as a series is smoothed.
-:func:`forensics_core.dispersion.too_smooth_test` tests it by permuting successive
-differences, which needs no distributional assumption.
+of the values left after detrending is about 2 when those values are exchangeable noise, and
+falls as a series is smoothed. :func:`forensics_core.dispersion.too_smooth_test` tests it by
+permuting those values, which needs no distributional assumption. Which values are the right
+ones is not a detail: for a trended harvest level only the linear-trend residuals carry
+information (see :func:`smoothness_of_reported_series`).
 
 Three warnings that decide whether any of this is usable here.
 
@@ -110,24 +112,42 @@ def harvest_variance_floor(
 def smoothness_of_reported_series(
     reported: pd.Series,
     *,
-    detrend: Literal["none", "linear", "diff"] = "diff",
+    detrend: Literal["linear", "diff"] = "linear",
     n_perm: int = 999,
     seed: int | None = None,
 ) -> TestResult:
-    """Is the reported series too smooth for its own successive changes to be exchangeable?
+    """Is the reported series too smooth for its deviations from trend to be exchangeable?
 
     Needs no external driver, which is why it is worth running first: it asks only whether the
     series moves the way a series subject to shocks moves. A plan-smoothed series does not.
+    With no pre-1992 hydrological driver for the anchor window (see the module docstring), it
+    is also the main underdispersion route this project has, so its detrending has to be the
+    one with power.
 
     Parameters
     ----------
     reported : pandas.Series
-        Reported output.
-    detrend : {"none", "linear", "diff"}, default "diff"
-        How to remove the trend before testing. Soviet series are strongly trended and an
-        untreated trend makes any series look smooth.
+        Reported output, as levels.
+    detrend : {"linear", "diff"}, default "linear"
+        How to remove the trend before testing. Soviet output series are strongly trended, so
+        the pre-registered choice for harvest and output *levels* is ``"linear"``: the test
+        runs on the residuals of an OLS line through time (its permutation p-value is an
+        approximation there, as the library documents, which is one reason its simulated
+        size has to be reported). On synthetic trend-plus-noise
+        levels it holds its size and detects 0.98 of smoothed series at n = 30
+        (``scripts/smoothness_size_power.py``; the table is in ``docs/research_question.md``).
+
+        ``"diff"`` is for a series that is random-walk-like in levels. On a trend-stationary
+        harvest series the library documents it as having essentially no power: the first
+        differences of trend plus iid noise are an MA(1) whose ratio sits near 3, not 2, so it
+        fails to flag the smoothed shapes the test exists for, and a non-rejection under it is
+        not evidence that a series is not too smooth. Use it only where a level series has
+        been shown to behave as a random walk, and say so.
+
+        ``"none"`` (test the raw levels) is not offered. It flags any trend, so on these
+        series it rejects every honest series as readily as a fabricated one.
     n_perm : int, default 999
-        Permutations of the successive differences.
+        Permutations of the detrended values.
     seed : int, optional
         Seed for the permutation.
 
@@ -143,13 +163,13 @@ def smoothness_of_reported_series(
 
     Notes
     -----
-    Remaining: a transcribed output series. Also decide how to report the trend choice: the
-    result can depend on it, so all three treatments should be shown rather than the one that
-    fires.
+    Remaining: a transcribed output series. The trend treatment is fixed in advance as above,
+    rather than shown in several versions with the one that fires reported; a result must
+    carry the simulated size and power of the chosen treatment at the n actually used.
     """
     raise NotImplementedError(
-        "wraps forensics_core.dispersion.too_smooth_test; needs a transcribed output series "
-        "and a decision to report all three detrending choices"
+        "wraps forensics_core.dispersion.too_smooth_test with detrend='linear' for trended "
+        "levels; needs a transcribed output series"
     )
 
 

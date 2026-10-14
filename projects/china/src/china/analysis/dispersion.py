@@ -30,7 +30,7 @@ chapter numbers, so nothing is added to the citation here.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 
@@ -175,28 +175,51 @@ def underdispersion_by_province(
 def smoothness_by_province(
     growth: pd.DataFrame,
     *,
-    detrend: str = "diff",
+    detrend: Literal["none", "linear", "diff"],
     n_perm: int = 999,
     seed: int | None = None,
 ) -> Any:
     """Test whether growth is too smooth, without needing a proxy at all.
 
-    Wraps :func:`forensics_core.dispersion.underdispersion.too_smooth_test`, whose statistic
-    is the von Neumann ratio, the mean squared successive difference over the variance, about
-    2 for independent noise and lower for a series with too little year-to-year movement. The
-    null is that successive changes are exchangeable and the p-value comes from permuting
-    them.
+    Wraps :func:`forensics_core.dispersion.underdispersion.too_smooth_test`. Its statistic is
+    the von Neumann ratio, the mean squared successive difference over the variance, of the
+    values ``detrend`` leaves (the levels, the linear-trend residuals or the first
+    differences), not of the growth series itself. The null is that those values are
+    exchangeable, and the p-value is the lower tail of their permutation distribution, whose
+    mean is exactly 2. Where the null is right the observed ratio sits near 2, and a series
+    with too little year-to-year movement sits below it. Where the null is wrong it does not:
+    the first differences of an iid series are an MA(1) with lag-1 autocorrelation -1/2, so
+    their ratio sits near 3 and the test cannot reject.
 
     The value of this test is that it needs no elasticity and no proxy, so it can be run on
-    any province and any vintage. Its cost is that a genuinely trending economy is smooth by
-    construction, which is what ``detrend`` is for.
+    any province and any vintage. Its cost is that the valid ``detrend`` depends on how
+    *honest* provincial growth is generated, and nobody has checked that yet.
 
     Parameters
     ----------
     growth : pandas.DataFrame
         Reported growth, from :func:`growth_series`.
-    detrend : {"none", "linear", "diff"}, default "diff"
-        Detrending applied before the statistic.
+    detrend : {"none", "linear", "diff"}
+        Detrending applied before the statistic. **Required, with no default**, because the
+        choice is a statement about the data-generating process of honest growth and has to
+        be made, and pre-registered, from evidence about that process, checked on series
+        that are not held out:
+
+        * ``"linear"`` is the test with power if honest growth is iid around a constant or a
+          linear trend. If honest growth is persistent it is badly oversized: on synthetic
+          AR(1) growth with rho 0.7, or random-walk growth, it rejects most *honest* series
+          at n = 25.
+        * ``"diff"`` is the exact test if honest growth is random-walk-like, and is then the
+          only correctly sized option. On iid or trend-stationary growth the library
+          documents it as having essentially no power: it cannot flag AR(1) deviations, the
+          usual fabrication shape.
+        * ``"none"`` treats any trend as smoothness: if growth drifts over the window (a
+          slowdown, say), it flags the drift, not fabrication. It is usable only where growth
+          has been shown to be stationary around a constant mean over the window tested.
+
+        ``scripts/smoothness_size_power.py`` simulates the size and power of each option at
+        n = 10 to 30 under iid and persistent honest growth; the table, and what it does and
+        does not settle, is in ``docs/research_question.md``.
     n_perm : int, default 999
         Permutations.
     seed : int, optional
@@ -214,11 +237,16 @@ def smoothness_by_province(
 
     Notes
     -----
-    What remains: the panel. Note that with roughly a decade of annual observations per
-    province the permutation distribution is coarse, so p-values should be reported with the
-    number of distinct attainable values.
+    What remains: the panel, and the detrend choice above, which has to be justified from the
+    persistence of honest growth before the test is run. Any result must carry the simulated
+    size and power at the n actually used, under both iid and persistent honest growth. With
+    roughly a decade of annual observations per province even ``"linear"`` has little power
+    (0.21 to 0.33 of smoothed series detected at n = 10 in the simulation), and the
+    permutation distribution is coarse, so p-values should be reported with the number of
+    distinct attainable values.
     """
     raise NotImplementedError(
-        "needs growth_series; with about ten annual observations per province the "
-        "permutation distribution is coarse and that has to be reported"
+        "needs growth_series and a pre-registered detrend justified from the persistence of "
+        "honest growth; with about ten annual observations per province the permutation "
+        "distribution is coarse and that has to be reported"
     )
