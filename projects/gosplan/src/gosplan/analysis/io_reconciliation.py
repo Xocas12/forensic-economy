@@ -167,9 +167,10 @@ def national_income_identity(
     foreign_balance : pandas.Series, optional
         Published foreign trade balance.
     tolerance : float, optional
-        Absolute tolerance. When None, derived from the printed precision of the figures with
-        :func:`gosplan.transcribe.validate.rounding_tolerance`, so that the test is against
-        what rounding permits rather than against a chosen epsilon.
+        Absolute tolerance. When None, derived from the printed precision of each figure with
+        :func:`gosplan.transcribe.validate.printed_rounding_tolerance`, so that the test is
+        against what rounding permits rather than against a chosen epsilon, and a figure
+        printed to fewer decimals is charged its own, larger rounding error.
 
     Returns
     -------

@@ -11,7 +11,12 @@ from __future__ import annotations
 
 import pytest
 from gosplan.transcribe.templates import read_filled
-from gosplan.transcribe.validate import rounding_tolerance, validate_file, validate_rows
+from gosplan.transcribe.validate import (
+    printed_rounding_tolerance,
+    rounding_tolerance,
+    validate_file,
+    validate_rows,
+)
 
 CLEAN = "synthetic_transcription_clean.csv"
 CORRUPT = "synthetic_transcription_corrupt.csv"
@@ -151,6 +156,64 @@ def test_a_total_outside_the_rounding_tolerance_is_rejected():
     """Same table printed as 0.7: off by 0.4, which no rounding of three figures explains."""
     rows = _table(
         [("A", "0,1", "data"), ("B", "0,1", "data"), ("C", "0,1", "data"), ("T", "0,7", "total")]
+    )
+    report = validate_rows(rows)
+    assert report.codes()["total_mismatch"] == 1
+    assert not report.ok
+
+
+@pytest.mark.parametrize(
+    ("addend_decimals", "total_decimals", "expected"),
+    [
+        ([1, 1], 0, 0.6),
+        ([0, 0, 1], 1, 1.1),
+        ([0] * 10 + [1] * 5, 0, 5.75),
+    ],
+)
+def test_printed_rounding_tolerance_charges_each_figure_its_own_last_place(
+    addend_decimals, total_decimals, expected
+):
+    assert printed_rounding_tolerance(addend_decimals, total_decimals) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(("n_addends", "decimals"), [(3, 1), (4, 0), (1, 2), (9, 0), (0, 0)])
+def test_printed_rounding_tolerance_equals_the_uniform_formula_at_one_precision(
+    n_addends, decimals
+):
+    assert printed_rounding_tolerance([decimals] * n_addends, decimals) == rounding_tolerance(
+        n_addends, decimals
+    )
+
+
+def test_printed_rounding_tolerance_rejects_nonsense():
+    with pytest.raises(ValueError):
+        printed_rounding_tolerance([1, -1], 0)
+    with pytest.raises(ValueError):
+        printed_rounding_tolerance([1, 1], -1)
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        # 2.4 + 3.4 printed with a whole-number total: the true addends sum to 5.7-5.9 and
+        # the true total is 5.5-6.5, so '6' is a correct rounding (bound 0.6, off by 0.2).
+        [("A", "2,4", "data"), ("B", "3,4", "data"), ("T", "6", "total")],
+        # Whole-number addends with one decimal addend and a decimal total: bound 1.1.
+        [("A", "2", "data"), ("B", "3", "data"), ("C", "0,4", "data"), ("T", "6,3", "total")],
+        [("A", "2", "data"), ("B", "3", "data"), ("C", "0,4", "data"), ("T", "6,2", "total")],
+    ],
+    ids=["decimal-addends-integer-total", "mixed-addends-6.3", "mixed-addends-6.2"],
+)
+def test_a_correctly_rounded_mixed_precision_total_is_accepted(spec):
+    report = validate_rows(_table(spec))
+    assert "total_mismatch" not in report.codes(), [i.message for i in report.errors]
+    assert report.ok, report.summary()
+
+
+def test_a_mixed_precision_total_outside_its_own_bound_is_still_rejected():
+    """2 + 3 + 0.4 printed as 6.7: off by 1.3, past the 1.1 that per-figure rounding allows."""
+    rows = _table(
+        [("A", "2", "data"), ("B", "3", "data"), ("C", "0,4", "data"), ("T", "6,7", "total")]
     )
     report = validate_rows(rows)
     assert report.codes()["total_mismatch"] == 1
