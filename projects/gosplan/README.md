@@ -52,9 +52,10 @@ What is free, what is gated and what is unreachable is set out bluntly in
 [data/ACCESS_NOTES.md](data/ACCESS_NOTES.md).
 
 **What is free and ready.** The physical cotton series that bracket the anchor (FAOSTAT seed
-cotton for the USSR 1961-1991, USDA FAS lint 1960-1986), the Western reconstructions (Maddison
-2023, Harrison's Bergson-school compilation, the World Bank archive that juxtaposes official
-net material product with Khanin's alternative and the CIA's GNP estimate), the congressional
+cotton for the USSR 1961-1991, which is the official figure re-published, and USDA FAS lint
+1960-1986), the Western reconstructions (Maddison 2023, Harrison's Bergson-school compilation,
+the World Bank archive that juxtaposes official net material product with Khanin's
+alternative and the CIA's GNP estimate), the congressional
 compendia (part 1 of the 1982 *Soviet Economy in the 1980's* and volume 1 of *Gorbachev's
 Economic Plans* only; the second halves of both were never located in a confirmed form), 145
 machine-readable transcriptions of official Narkhoz series from Hokkaido, and 28 scanned
@@ -80,9 +81,12 @@ whatever the union volumes print by republic, which is less.
 would give a check the falsifiers did not control. The series actually fetched begins in
 1992, nine years after the padding ended. Two unopened pages of the same database and a
 registration-gated runoff archive are the remaining candidates. Until one of them yields a
-pre-1992 series, the independent physical check on the anchor is FAOSTAT against USDA and
-nothing else, and both are outside estimates of the same reported quantity rather than a
-driver nobody could touch.
+pre-1992 series, the only outside check on the anchor is the official figure against the USDA
+estimate. FAOSTAT does not add a second one: its USSR seed cotton carries flag A, FAOSTAT's
+"Official figure", so it re-publishes the report under test. The USDA series is an estimate,
+not a driver nobody could touch, and two series cannot say which of them is wrong. See
+[docs/validation_anchors.md](docs/validation_anchors.md) for what the cotton reconciliation
+can and cannot be.
 
 The Russian State Archive of the Economy is a third constraint of a different kind. Its
 electronic inventories list both target collections, Gosplan (fond 4372) and the Central

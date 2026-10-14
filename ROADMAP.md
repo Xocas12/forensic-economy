@@ -167,7 +167,7 @@ committed, not that code exists for it.
 |---|---|---|---|
 | 1 | Transcribe the first target twice, independently, and publish the per-digit disagreement rate | P0 | open, needs human eyes. It gates whether any digit test is usable at all |
 | 2 | Locate the republic-level yearbook, or write up its absence | P0 | open - not found in any digitised form |
-| 3 | Find a pre-1992 hydrological series, or accept the two crop sources as the only physical check | P1 | open |
+| 3 | Find a pre-1992 hydrological series, or accept the official figure against the USDA estimate as the only outside check (FAOSTAT's USSR cotton is the official figure re-published, flag A) | P1 | open |
 | 4 | Resolve the internal inconsistency in the anchor magnitude | P1 | open - the source gives an aggregate that its own per-year figures do not reproduce |
 | 5 | Loaders for the machine-readable sources the acquirers already fetch | P1 | open - there is no `clean/` package here at all |
 | 6 | The plan-fulfilment, hidden-inflation, dispersion and reconciliation analyses | P3+ | blocked. The anchor may not be plotted, tested, scored or summarised before G3, and `src/gosplan/seal.py` enforces that in code |

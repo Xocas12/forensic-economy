@@ -61,8 +61,10 @@ class TranscriptionTarget:
     confirmed_present : bool
         True only when someone opened the volume and saw this table.
     cross_check_source_id : str or None
-        A machine-readable source covering the same series, to be used as the independent
-        second transcription in :mod:`gosplan.transcribe.compare` where one exists.
+        A machine-readable source covering the same series, to compare the transcription
+        against where one exists. ``notes`` says what kind of check it is -- a second
+        transcription of the same tables, the official figure re-published in some vintage, or
+        an outside estimate -- because a disagreement means something different in each case.
     notes : str
         Anything else the transcriber needs before starting.
     """
@@ -104,9 +106,13 @@ TARGETS: tuple[TranscriptionTarget, ...] = (
         cross_check_source_id="faostat_qcl_bulk_europe_ussr",
         notes=(
             "The union total can be checked against FAOSTAT seed cotton for the same years "
-            "(area 228, item 328, element 5510), which is an independent series rather than "
-            "a second reading of the same page. A disagreement there is a finding about the "
-            "sources; a disagreement between two transcriptions of this page is an error rate."
+            "(area 228, item 328, element 5510). That series carries flag A, 'Official "
+            "figure', in every year: it is the Soviet official figure as the national "
+            "authority supplied it to FAO, not an outside measurement. Agreement says this "
+            "transcription matches one official vintage. A disagreement is a transcription "
+            "error or a different official vintage, to be settled against the page, and is "
+            "never evidence about padding. A disagreement between two transcriptions of this "
+            "page is an error rate."
         ),
     ),
     TranscriptionTarget(
@@ -132,7 +138,10 @@ TARGETS: tuple[TranscriptionTarget, ...] = (
         cross_check_source_id="faostat_qcl_bulk_europe_ussr",
         notes=(
             "Transcribe the same year from two editions wherever both exist. Restatement "
-            "between editions must be recorded in definition_note, never silently overwritten."
+            "between editions must be recorded in definition_note, never silently overwritten. "
+            "The FAOSTAT cross-check carries flag A, 'Official figure': it is the official "
+            "series re-published in one vintage, which need not be the edition in hand, so a "
+            "disagreement with it is a revision or a transcription error, not outside evidence."
         ),
     ),
     TranscriptionTarget(

@@ -1,19 +1,24 @@
-"""Physical cotton output and the hydrological correlate: the anchor's independent evidence.
+"""Physical cotton output and the hydrological correlate: what the anchor can be checked against.
 
-The Uzbek cotton affair is the project's only validation anchor, and it is testable only
-because the padded quantity -- raw cotton delivered -- was also estimated by parties the
-falsifiers did not control. Two of those estimates are machine-readable and cover the
-1978-1983 window:
+The Uzbek cotton affair is the project's only validation anchor. The padded quantity -- raw
+cotton delivered -- appears in two machine-readable series that cover the 1978-1983 window,
+and only one of them is an outside estimate:
 
 * **FAOSTAT** bulk crop production. The USSR is filed under the *Europe* regional file
   (area code 228), not Asia; the Uzbek SSR has no back-cast, its FAOSTAT series beginning in
   1992 (area code 235, in the Asia file). So FAOSTAT gives a union-level series across the
-  window and a republic-level series only after the union dissolved.
+  window and a republic-level series only after the union dissolved. USSR seed cotton carries
+  flag ``A`` in every year, which the file's own ``Flags.csv`` defines as "Official figure":
+  it is the Soviet official series re-published, not an estimate made outside the reporting
+  chain. It checks a transcription of the annuals and tells which official vintage FAO holds;
+  it is not a measurement to reconcile the official series against
+  (``docs/validation_anchors.md``).
 * **USDA Foreign Agricultural Service** production, supply and distribution. USSR market
-  years 1960-1986, Uzbekistan from 1987, twelve attributes each. Reported in 480-lb lint
-  bales, not tonnes of seed cotton, so it measures a different physical quantity than
-  FAOSTAT and than the Soviet annuals: reconciling the three is a units problem before it is
-  a forensics problem (``docs/data_dictionary.md``).
+  years 1960-1986, Uzbekistan from 1987, twelve attributes each. A Western estimate, though
+  its own inputs may include the official figures. Reported in 480-lb lint bales, not tonnes
+  of seed cotton, so it measures a different physical quantity than FAOSTAT and the Soviet
+  annuals: comparing them is a units problem before it is a forensics problem
+  (``docs/data_dictionary.md``).
 
 Neither is pinned to a checksum. Both publishers revise and republish on a schedule -- USDA
 around the monthly WASDE release -- and pinning would report a legitimate republication as
@@ -24,11 +29,12 @@ CAWater-Info pages anyway so that the gap is documented rather than assumed. The
 water-delivery tables that the design assumed would provide an irrigation-withdrawal control
 begin in 1992. The morphometric and river-resource pages of the same database were never
 opened during scaffolding and are the only remaining candidates for a pre-1992 series; they
-are fetched here so a person can look. Until one of them yields numbers, the independent
-physical check on the anchor is FAOSTAT versus USDA and nothing else.
+are fetched here so a person can look. Until one of them yields numbers, the only outside
+check on the anchor is the official figure against the USDA estimate, and two series cannot
+say which of them is wrong.
 
 Nothing here parses, converts or joins anything. Unit conversion (bales to tonnes, lint to
-seed cotton) and the three-way reconciliation belong downstream.
+seed cotton) and the cotton reconciliation belong downstream.
 """
 
 from __future__ import annotations
@@ -59,9 +65,12 @@ def faostat_europe(source: Any, data_dir: Path, *, force: bool = False) -> Acqui
 
     Item codes of interest are 328 (seed cotton, unginned), 767 (cotton lint, ginned) and
     329 (cotton seed); element 5510 is production in tonnes, 5312 area harvested, 5419 yield.
-    The registry records that USSR seed cotton carries the official flag ``A`` for all 31
-    years while cotton lint for the same area is flagged ``X`` (unofficial), which is why the
-    flag column must survive into any derived table.
+    USSR seed cotton carries flag ``A`` for all 31 years, which the file's ``Flags.csv``
+    defines as "Official figure": the value the national authority supplied, so this series is
+    the Soviet official figure re-published. Cotton lint for the same area carries ``X``,
+    "Figure from external organization", for 1961-1964 only and ``A`` from 1965. The flag
+    column must survive into any derived table, because it is what says whose number a value
+    is.
     """
     if not source.url:
         return AcquireResult(source.id, False, "registry entry has no url")
@@ -86,9 +95,12 @@ def faostat_asia(source: Any, data_dir: Path, *, force: bool = False) -> Acquire
 def usda_psd_cotton(source: Any, data_dir: Path, *, force: bool = False) -> AcquireResult:
     """USDA FAS PSD bulk cotton file: USSR 1960-1986, Uzbekistan 1987 onward.
 
-    The independent Western estimate of the same quantity FAOSTAT reports, and the natural
-    cross-source reconciliation partner. Two traps recorded in the registry: values are
-    thousands of 480-lb lint bales rather than tonnes of seed cotton, and the file carries no
+    The only outside estimate of Soviet cotton output that covers the anchor window:
+    FAOSTAT's USSR cotton is the official figure itself. Its own inputs may include the
+    official figures, so it is an estimate rather than an independent measurement, and set
+    against the official series alone it cannot say which of the two is wrong. Two traps
+    recorded in the registry: values are thousands of 480-lb lint bales rather than tonnes of
+    seed cotton, and the file carries no
     "Former Soviet Union" aggregate, so 1987-1991 union totals have to be summed across the
     successor republics -- an aggregation whose composition must be stated wherever it is
     used.
