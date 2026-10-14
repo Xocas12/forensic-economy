@@ -3,11 +3,27 @@
 What a working method must reproduce. Every fact below was read from the source cited during
 the scaffolding session; items marked **TO CONFIRM** were not, and must be checked before use.
 
-## Tier 1 - the natural experiment
+## Tier 1 - the reform break
 
-**The unified regional GDP accounting reform.** This is the most interesting single test in
-the project: if part of the provincial-sum minus national gap is misreporting rather than
-method, the gap should contract discontinuously when the centre took over the calculation.
+**The unified regional GDP accounting reform.** What a working method must reproduce here is
+the **date** of the break. The break is not a label for misreporting, because the reform
+changed the method on purpose to close the gap. The deputy head's interview on the plan
+(`nbs_qa_unified_accounting_plan_2017`, `https://www.stats.gov.cn/sj/sjjd/202302/t20230202_1895929.html`)
+says, in the text recorded in the registry:
+
+- 改革核算主体，改革核算方法，改革工作机制: reform the accounting entity, the accounting method
+  and the work mechanism;
+- 实现地区生产总值汇总数据与国内生产总值数据的基本衔接: achieve basic alignment of summed
+  regional GDP with GDP;
+- and the reason: the gap between the two was 差距有些偏大, somewhat too large.
+
+So the gap is predicted to contract at the reform whether or not anything was fabricated. The
+aggregate jump identifies the combined effect of the method change, the fourth economic census
+and any misreporting, and no placebo year or ±1-year check separates them, because 2019 is
+also the year the method changed. **TO CONFIRM:** the same page is reported to go further,
+saying the unified method is to 确保 (ensure) that alignment and that the reform was timed to
+use the fourth economic census (利用开展第四次全国经济普查的契机，2019年实施). Neither sentence is
+in the registry's recorded evidence.
 
 Verified from the National Bureau of Statistics' own question-and-answer page
 (`https://www.stats.gov.cn/sj/sjjd/202302/t20230202_1896273.html`):
@@ -25,7 +41,12 @@ bureau's head on 5 January 2020.
 
 **Design consequence.** The break is at the 2019 data year, not at the 2017 approval. Test
 sensitivity to ±1 year, and remember that provinces revised back-series at different times
-(`known_traps.md`).
+(`known_traps.md`). Report the aggregate jump as the combined effect and nothing narrower. Any
+misreporting claim from the reform comes from cross-province variation
+(`reform.cross_province_reform_contrast`): whether the reform moved a province's figures more
+where its pre-reform growth had outrun its physical proxies. That comparison rests on a
+stated model of how the method and census revisions are distributed across provinces, fixed
+before the revisions are seen; without it the reform supports no misreporting claim.
 
 ## Tier 2 - the admitted-falsification episodes
 

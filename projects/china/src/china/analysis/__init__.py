@@ -16,9 +16,11 @@ The five tests, and why each one is here
     has to be decomposed into its mechanical part (cross-province double counting, different
     deflators, boundary changes) before any residual can be called misreporting.
 :mod:`china.analysis.reform`
-    The unified-accounting reform as a natural experiment. The break is at the **2019 data
-    year**, verified from the bureau's own question-and-answer page, and not at the June 2017
-    approval.
+    The unified-accounting reform. The break is at the **2019 data year**, verified from the
+    bureau's own question-and-answer page, and not at the June 2017 approval. The reform
+    changed the method in order to close the gap, so the aggregate jump at 2019 is the
+    combined effect of the method change, the census and any misreporting; a misreporting
+    claim can only come from the cross-province contrast and the stated model it rests on.
 :mod:`china.analysis.proxies`
     Provincial product against electricity, rail freight, credit and nightlights. The residual
     from these relationships is what separates a province that hit its target by managing
