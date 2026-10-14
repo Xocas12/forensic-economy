@@ -98,9 +98,19 @@ Targets and their provenance are in [docs/validation_anchors.md](docs/validation
 **Unflagged firm-years are unlabeled, not clean.** The SEC prosecutes what is detectable, large
 and litigable. Treating the 145,081 unflagged rows as negatives tells a classifier that every
 undetected misstatement is an example of honesty, and what it then learns to predict is
-enforcement. Hence the positive-unlabeled formulation, and hence rank metrics with the base
-rate printed beside them: at 0.66% positives, a model that flags nothing is 99.3% accurate.
-This and six other confounds are in [docs/known_traps.md](docs/known_traps.md).
+enforcement.
+
+**The positive-unlabeled formulation does not get out of that under rank metrics.**
+Elkan-Noto fits that same classifier and divides its score by one constant, so it ranks
+firm-years exactly as the classifier does. It is kept for what the constant estimates, the
+share of misstatement never charged, and it is not an arm of the rank comparison. Bagging PU
+does rank differently with a nonlinear base, but it assumes, as Elkan-Noto does, that charged
+cases are a random draw from the misstatements, which is the assumption this trap denies.
+Undoing a selection that depends on the firm needs a model of the selection, and none has been
+chosen. So every metric here is performance at predicting enforcement, and it is reported as
+rank metrics with the base rate printed beside them: at 0.66% positives, a model that flags
+nothing is 99.3% accurate. This and six other confounds are in
+[docs/known_traps.md](docs/known_traps.md).
 
 ## The weakest link, named
 

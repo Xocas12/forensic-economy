@@ -10,9 +10,10 @@ repository can have entered it without someone deciding to compute it.
     The Beneish (1999) M-score evaluated against AAER labels with rank metrics. The floor every
     later model has to clear.
 ``pu_benchmark``
-    Positive-unlabeled learning (Elkan and Noto 2008; Mordelet and Vert 2014) against the
-    treat-unflagged-as-clean formulation, measured against the corrected Bao et al. (2020)
-    figures in ``docs/validation_anchors.md``.
+    Positive-unlabeled learning against the treat-unflagged-as-clean formulation, measured
+    against the corrected Bao et al. (2020) figures in ``docs/validation_anchors.md``. The PU
+    arm of the rank comparison is bagging PU (Mordelet and Vert 2014). Elkan and Noto (2008)
+    ranks firm-years exactly as the naive arm does, so it is used for the class prior only.
 ``earnings_bunching``
     Excess mass at the earnings thresholds firms are rewarded for clearing. The feature family
     with a direct analogue in the Soviet plan-fulfilment data.
