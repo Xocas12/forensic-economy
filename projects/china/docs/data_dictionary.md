@@ -89,8 +89,10 @@ downstream.
   the provincial index is at provincial deflators while the national growth rate is at
   national ones.
 - **There is no provincial deflator series in the registry.** That is a gap, not an oversight:
-  it is why `china.analysis.gap.mechanical_gap_components` refuses to run and says the
-  residual can only be bounded, not decomposed.
+  it is why `china.analysis.gap.mechanical_gap_components` refuses to run. Without it, or a
+  source for double counting and for the informal-economy adjustment, the residual is the
+  undecomposed gap. It is not a bound on misreporting unless a sign assumption is stated for
+  each omitted term, because those terms push the gap in opposite directions.
 
 ## 4. The province list problem
 

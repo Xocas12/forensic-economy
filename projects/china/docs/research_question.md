@@ -13,7 +13,8 @@ misreporting, it should contract discontinuously at the reform.
 Sub-questions:
 
 1. What is the provincial-sum minus national gap, by year, in levels and in growth rates, and
-   how much of it is mechanically explained (double counting, deflators, boundary changes)?
+   how much of it is mechanically explained (double counting, the informal-economy
+   adjustment, deflators, boundary changes)?
 2. Does the residual gap contract at the unified-accounting reform, and by how much? (The
    exact effective year is verified from NBS sources in `validation_anchors.md`.)
 3. Do provincial GDP series track provincial electricity consumption, rail freight, bank

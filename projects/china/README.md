@@ -193,7 +193,10 @@ only. Nothing has been fetched, no panel exists, and no number in this tree is a
   extracts the published name mechanically and then refuses to map it, because no
   Chinese-to-English province table in this project was read from a source. Build it once from
   a fetched report page and record it.
-- **Is there any free source for cross-province double counting, or for provincial
-  deflators?** Neither is in the registry. Until they are, the mechanical component of the gap
-  cannot be estimated and the residual is an upper bound on misreporting, which is how it must
-  be reported.
+- **Is there any free source for cross-province double counting, for the size of the
+  centre's informal-economy adjustment, or for provincial deflators?** None is in the
+  registry. Until they are, the mechanical component of the gap cannot be estimated, and the
+  residual must be reported as the undecomposed gap, not as a bound on misreporting. Double
+  counting widens the gap and the informal-economy adjustment narrows it, so with neither
+  sized the residual can sit above or below misreporting. A bound can be stated only beside an
+  explicit sign assumption for each omitted term (see `china.analysis.gap`).
