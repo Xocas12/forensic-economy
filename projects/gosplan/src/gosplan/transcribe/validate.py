@@ -60,6 +60,7 @@ __all__ = [
     "Issue",
     "ValidationReport",
     "cell_key",
+    "period_years",
     "rounding_tolerance",
     "validate_file",
     "validate_rows",
@@ -221,7 +222,25 @@ def cell_key(row: Mapping[str, Any]) -> tuple[str, str, str]:
     )
 
 
-def _period_years(period: str) -> list[int]:
+def period_years(period: str) -> list[int]:
+    """The first and last calendar year a ``period`` field names, or ``[]`` if it is malformed.
+
+    The one reading of the three period forms the schema allows: ``YYYY`` is one year,
+    ``YYYY-YYYY`` a plan period given by its first and last year, and ``YYYY/YY`` a crop year,
+    which spans the year it starts in and the next. The validator and the held-out seal both
+    read periods through this, so they cannot disagree about which years a cell covers.
+
+    Examples
+    --------
+    >>> period_years("1980")
+    [1980]
+    >>> period_years("1976-1980")
+    [1976, 1980]
+    >>> period_years("1984/85")
+    [1984, 1985]
+    >>> period_years("IX five-year plan")
+    []
+    """
     m = _PERIOD_RE.match(period.strip())
     if not m:
         return []
@@ -363,7 +382,7 @@ def _check_currency(
             )
         )
 
-    years = _period_years(period)
+    years = period_years(period)
     note = definition_note.strip()
     if basis is CurrencyBasis.OLD_ROUBLES and years and min(years) >= CURRENCY_REFORM_YEAR:
         issues.append(
@@ -613,7 +632,7 @@ def validate_rows(
         if issue:
             issues.append(issue)
         elif territorial is TerritorialBasis.UNSTATED:
-            years = _period_years(period)
+            years = period_years(period)
             touches_boundary_change = bool(years) and any(
                 min(years) <= y <= max(years) for y in BOUNDARY_CHANGE_YEARS
             )
