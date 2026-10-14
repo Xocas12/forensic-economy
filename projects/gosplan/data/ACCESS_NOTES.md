@@ -31,9 +31,10 @@ Twenty-three sources have acquirers. `python -m gosplan.acquire --list` marks th
 below is gated, and none of it needed anything but an anonymous GET.
 
 **The physical cotton series that bracket the anchor.** FAOSTAT bulk crop production carries
-USSR seed cotton for all 31 years 1961-1991 with an official flag (the USSR is filed under the
-*Europe* regional file, not Asia). USDA FAS PSD carries the same physical quantity as an
-independent Western estimate, USSR 1960-1986 and Uzbekistan from 1987. Neither is pinned to a
+USSR seed cotton for all 31 years 1961-1991 with flag A, which the file defines as "Official
+figure" (the USSR is filed under the *Europe* regional file, not Asia). That makes it the Soviet
+official series re-published, not an outside estimate. USDA FAS PSD carries the same physical
+quantity as a Western estimate, USSR 1960-1986 and Uzbekistan from 1987. Neither is pinned to a
 checksum, because both publishers revise on a schedule and pinning would report a legitimate
 republication as corruption.
 
@@ -210,9 +211,11 @@ described as 1911-2018 and the river-resources page, were never opened and are t
 candidates; the acquirer fetches them in both English and Russian so a person can look. The
 Global Runoff Data Centre is the other candidate and needs a request.
 
-Until one of those yields a pre-1992 series, the independent physical check on the anchor is
-FAOSTAT against USDA and nothing else. Both are estimates of the same reported quantity by
-outside bodies, which is weaker than a driver the falsifiers could not touch.
+Until one of those yields a pre-1992 series, the only outside check on the anchor is the
+official figure against the USDA estimate. FAOSTAT's USSR seed cotton is not a second one: it
+carries flag A, "Official figure", so it re-publishes the report under test. The USDA series is
+an estimate by an outside body, which is weaker than a driver the falsifiers could not touch,
+and with two series there is no way to say which of them is wrong.
 
 ---
 

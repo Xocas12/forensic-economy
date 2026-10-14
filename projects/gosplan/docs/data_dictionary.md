@@ -213,16 +213,22 @@ The three cotton series this project can compare measure three different things:
 
 | Source | Quantity | Unit | Coverage |
 |---|---|---|---|
-| FAOSTAT, area 228 | seed cotton, unginned (item 328) | tonnes | USSR 1961-1991, official flag |
+| FAOSTAT, area 228 | seed cotton, unginned (item 328) | tonnes | USSR 1961-1991, flag A ("Official figure") in every year |
 | FAOSTAT, area 235 | seed cotton | tonnes | Uzbekistan 1992 onward only |
 | USDA FAS PSD | cotton **lint** | thousands of 480 lb bales | USSR 1960-1986, Uzbekistan 1987 onward |
 | Soviet annuals | raw cotton (khlopok-syrets) | thousand tonnes, to be confirmed per table | as transcribed |
 
 One 480 lb bale is 217.72 kg. Lint is not seed cotton: converting between them needs a
-ginning outturn ratio, which is itself a reported quantity. Reconciling the three is a units
-problem before it is a forensics problem, and the conversion used must be stated with every
-result. Note also that FAOSTAT flags USSR cotton **lint** as unofficial while flagging seed
-cotton as official, so the flag column has to survive into any derived table.
+ginning outturn ratio, which is itself a reported quantity. Comparing them is a units problem
+before it is a forensics problem, and the conversion used must be stated with every result.
+
+Note also what the FAOSTAT flags say, as the bulk file's own `Flags.csv` defines them. USSR
+seed cotton carries flag A, "Official figure", in every year: it is the Soviet official series
+re-published, so it checks a transcription of the annuals and tells which official vintage FAO
+holds, but it is not a third measurement beside the annuals and the USDA estimate
+(`validation_anchors.md`). USSR cotton
+**lint** carries flag X, "Figure from external organization", for 1961-1964 only, and flag A
+from 1965. The flag column has to survive into any derived table.
 
 The USDA file carries no "Former Soviet Union" aggregate, so union totals for 1987-1991 have
 to be summed across successor republics. Whichever republics are included is a choice that

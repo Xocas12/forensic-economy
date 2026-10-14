@@ -338,8 +338,9 @@ Physical presence, or a library that will lend. Not a purchase and not an accoun
 12. **Chase a pre-1992 hydrological series**: open the two unopened CAWater-Info pages the
     acquirer already fetches in both languages, and if they yield nothing, submit a GRDC
     request after checking its period of record. Unblocks: `gosplan`'s independent physical
-    check on the anchor window, which today is FAOSTAT against USDA and nothing else, both of
-    them outside estimates of the same reported quantity.
+    check on the anchor window. Today the only outside check is the official figure against
+    the USDA estimate: FAOSTAT's USSR seed cotton carries flag A, "Official figure", so it
+    re-publishes the official series rather than adding a second source.
 13. **Build the Chinese-to-canonical province map** from the `province_zh` column of a fetched
     central bank year page and record it. Unblocks: the `china` loader, which refuses to guess
     it. Needs data on disk first, so it follows item 1.
@@ -407,9 +408,11 @@ than hedging:
   finding.
 - **The intended independent physical check does not cover the anchor window.** The
   irrigation-withdrawal table actually fetched begins in 1992, nine years after the padding
-  ended, so the only physical corroboration available today is FAOSTAT against USDA, and both
-  are outside estimates of the same reported quantity rather than a driver the falsifiers could
-  not touch.
+  ended, so the only outside check available today is the official figure against the USDA
+  estimate. FAOSTAT's USSR seed cotton does not add a second one: it carries flag A, FAOSTAT's
+  "Official figure", so it re-publishes the report under test. The USDA series is an estimate
+  rather than a driver the falsifiers could not touch, and two series cannot say which of them
+  is wrong.
 - **Its deepest remaining route is a trip to Moscow.** On the evidence actually read there is
   no remote access to RGAE documents at all.
 

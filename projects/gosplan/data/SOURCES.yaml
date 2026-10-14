@@ -219,15 +219,18 @@
   license: FAO open data (CC BY-NC-SA 3.0 IGO per FAOSTAT terms; not re-verified this session)
   notes: 'USSR is filed under the Europe regional file. Row confirmed: "228","''810","USSR","328","''01921.01","Seed
     cotton, unginned","5510","Production","t", Y1961=4518000 (flag A) ... Y1991=7800000; 31 non-empty
-    years 1961-1991, none after. Also present for USSR: 767 Cotton lint ginned (1961=1,528,000 t, flag
-    X ''Unofficial figure''), 329 Cotton seed (1961=2,756,000 t, X), 331 Cottonseed oil. Selected seed-cotton
+    years 1961-1991, none after. Seed cotton is flag A (''Official figure'') in every year, so this series
+    is a re-publication of the Soviet official figure, not an outside estimate. Also present for USSR: 767
+    Cotton lint ginned (1961=1,528,000 t, flag X ''Figure from external organization''; X for 1961-1964 only,
+    A from 1965), 329 Cotton seed (1961=2,756,000 t, X), 331 Cottonseed oil. Selected seed-cotton
     values: 1975=7,864,000; 1980=9,100,000; 1983=9,221,000; 1985=8,755,000; 1990=8,305,000 t. Local sha256
     of extracted Europe csv: 55cc7f4e00f47ae5f75d95b47d2e9c5540288bf4570cb2839cab44154b3f2e02.'
   blocked_reason: null
   evidence: |-
     HTTP 200, 3,882,548 bytes, valid zip; grep of the inner CSV returned the USSR seed-cotton production row with values for every year 1961-1991 as listed in notes.
+    Re-checked 2026-10-14, flags only: re-fetched, HTTP 200, 3,882,548 bytes, sha256 as recorded above. The zip's Production_Crops_Livestock_E_Flags.csv reads A=Official figure, E=Estimated value, I=Value imputed by a receiving agency, M=Missing value; data cannot exist, X=Figure from external organization. Area 228, element 5510: item 328 (seed cotton) is A in all 31 years 1961-1991; item 767 (lint) is X 1961-1964 and A 1965-1991. This corrects the gloss of X that notes and download_plan carried before.
   download_plan: |-
-    GET https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Europe.zip and .../Production_Crops_Livestock_E_Asia.zip (no auth, no rate limit observed; ~4-5 MB each; check Last-Modified header and skip if unchanged). Unzip; read Production_Crops_Livestock_E_<Region>.csv (latin-1/UTF-8, wide format). Filter Area Code==228 (USSR) in Europe file and Area Code==235 (Uzbekistan) in Asia file; Item Code 328 (seed cotton), 767 (cotton lint), 329 (cotton seed); Element Code 5510 (Production, t), also 5312 area harvested and 5419 yield if needed. Keep the F flag column (A=official, X=unofficial, E=estimate). For a single-file alternative use Production_Crops_Livestock_E_All_Data_(Normalized).zip (33.9 MB, long format) at the same path. Verify with sha256 recorded here.
+    GET https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Europe.zip and .../Production_Crops_Livestock_E_Asia.zip (no auth, no rate limit observed; ~4-5 MB each; check Last-Modified header and skip if unchanged). Unzip; read Production_Crops_Livestock_E_<Region>.csv (latin-1/UTF-8, wide format). Filter Area Code==228 (USSR) in Europe file and Area Code==235 (Uzbekistan) in Asia file; Item Code 328 (seed cotton), 767 (cotton lint), 329 (cotton seed); Element Code 5510 (Production, t), also 5312 area harvested and 5419 yield if needed. Keep the F flag column; the file's own Flags.csv defines A=Official figure, E=Estimated value, I=Value imputed by a receiving agency, M=Missing value; data cannot exist, X=Figure from external organization. A-flagged values are the national authority's own figures, so for area 228 they are a re-publication of the Soviet official series, usable as a transcription and vintage check on the annuals and not as an independent measurement beside them. For a single-file alternative use Production_Crops_Livestock_E_All_Data_(Normalized).zip (33.9 MB, long format) at the same path. Verify with sha256 recorded here.
   verification:
     verdict: not_verified
     reason: verifier returned no verdict for this id
