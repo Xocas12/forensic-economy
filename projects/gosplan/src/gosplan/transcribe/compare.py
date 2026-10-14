@@ -20,20 +20,25 @@ Two rates are reported and they are not the same thing.
 read differently at all. It is the honest headline number for "how reliable is this table".
 
 *Digit disagreement rate*, per position, is what bears on a digit test. A pair of readings
-can disagree on 2 percent of cells while disagreeing on 0.4 percent of digits, and it is the
-second figure that says whether a first-digit test is measuring anything.
+can disagree on 2 percent of cells while disagreeing on 0.4 percent of digits, and neither
+figure says whether a first-digit test is measuring anything: if every one of those errors
+sits in the leading digit, the first-digit error rate is 2 percent. The pooled digit rate is
+an average over positions, never above the worst one, so it is reported for orientation and
+the gate does not use it. What matters is the rate at the position the test reads.
 
-Alignment is from the most significant digit by default, because that is the position a
-Benford-type test reads. Where two readings differ in length -- one dropped a digit -- every
-position past the shorter string counts as compared and disagreeing, which is the
-conservative treatment: a dropped digit shifts every subsequent position, and pretending
-otherwise would understate the damage.
+Alignment is from the first significant digit by default, because that is the position a
+Benford-type test reads: the zeros that pad a value below one (``0,06``) are skipped, as
+the test skips them when it takes the significand. ``trailing`` alignment indexes from the
+last printed digit instead, which is what a terminal-digit test reads. Where two readings
+differ in length -- one dropped a digit -- every position past the shorter string counts as
+compared and disagreeing, which is the conservative treatment: a dropped digit shifts every
+subsequent position, and pretending otherwise would understate the damage.
 
 No threshold is built in. There is no published standard for an acceptable transcription
 error rate in this setting, and inventing one here would be exactly the kind of borrowed
 number this programme refuses. :func:`digit_tests_permitted` therefore takes the threshold as
 a required argument, so that whoever runs a digit test has to write down what they consider
-acceptable and defend it.
+acceptable and defend it, together with the digit positions that test reads.
 """
 
 from __future__ import annotations
@@ -70,8 +75,10 @@ def digit_disagreements(digits_a: str, digits_b: str, align: Alignment = "leadin
     Parameters
     ----------
     digits_a, digits_b : str
-        Significant digits, separators and decimal marks already removed (this is what
-        :attr:`gosplan.transcribe.schema.ParsedNumber.digits` holds).
+        Digit strings, separators and decimal marks already removed. The comparison passes
+        :attr:`gosplan.transcribe.schema.ParsedNumber.significant_digits` for ``leading``
+        alignment and :attr:`~gosplan.transcribe.schema.ParsedNumber.digits` for
+        ``trailing``.
     align : {"leading", "trailing"}, default "leading"
         Which end to index from. ``leading`` matches how a first-digit or first-two-digits
         test reads a number; ``trailing`` matches a terminal-digit test.
@@ -104,7 +111,12 @@ def digit_disagreements(digits_a: str, digits_b: str, align: Alignment = "leadin
 
 @dataclass(frozen=True)
 class CellDisagreement:
-    """One cell the two transcriptions did not agree on."""
+    """One cell the two transcriptions did not agree on.
+
+    ``digits_a`` and ``digits_b`` are the strings the digit positions were compared over:
+    the significant digits under ``leading`` alignment, every printed digit under
+    ``trailing``.
+    """
 
     key: tuple[str, str, str]
     kind: Literal["raw_text", "missing_in_a", "missing_in_b"]
@@ -262,7 +274,9 @@ def compare_transcriptions(
     name_a, name_b : str
         Labels for the report.
     align : {"leading", "trailing"}, default "leading"
-        Digit alignment; see :func:`digit_disagreements`.
+        Digit alignment; see :func:`digit_disagreements`. ``leading`` compares from the
+        first significant digit, so the zeros padding a value below one are not position 1;
+        ``trailing`` compares every printed digit from the right.
 
     Returns
     -------
@@ -296,20 +310,23 @@ def compare_transcriptions(
         raw_b = str(row_b.get("value_raw", "") or "").strip()
         pa = parse_printed_number(raw_a)
         pb = parse_printed_number(raw_b)
+        if align == "leading":
+            digits_a, digits_b = pa.significant_digits, pb.significant_digits
+        else:
+            digits_a, digits_b = pa.digits, pb.digits
 
-        width = max(len(pa.digits), len(pb.digits))
-        n_bad = digit_disagreements(pa.digits, pb.digits, align)
+        width = max(len(digits_a), len(digits_b))
+        n_bad = digit_disagreements(digits_a, digits_b, align)
         n_digits_compared += width
         n_digit_disagreements += n_bad
         for offset in range(width):
+            position = offset + 1
             if align == "leading":
-                position = offset + 1
-                char_a = pa.digits[offset] if offset < len(pa.digits) else None
-                char_b = pb.digits[offset] if offset < len(pb.digits) else None
+                char_a = digits_a[offset] if offset < len(digits_a) else None
+                char_b = digits_b[offset] if offset < len(digits_b) else None
             else:
-                position = offset + 1
-                char_a = pa.digits[-1 - offset] if offset < len(pa.digits) else None
-                char_b = pb.digits[-1 - offset] if offset < len(pb.digits) else None
+                char_a = digits_a[-1 - offset] if offset < len(digits_a) else None
+                char_b = digits_b[-1 - offset] if offset < len(digits_b) else None
             position_compared[position] = position_compared.get(position, 0) + 1
             if char_a != char_b:
                 position_bad[position] = position_bad.get(position, 0) + 1
@@ -323,8 +340,8 @@ def compare_transcriptions(
                     raw_b=raw_b,
                     value_a=pa.value,
                     value_b=pb.value,
-                    digits_a=pa.digits,
-                    digits_b=pb.digits,
+                    digits_a=digits_a,
+                    digits_b=digits_b,
                     n_digit_positions=width,
                     n_digit_disagreements=n_bad,
                     row_a=row_a_no,
@@ -408,9 +425,16 @@ def digit_tests_permitted(
     report: ComparisonReport,
     *,
     max_digit_disagreement_rate: float,
+    positions: Sequence[int],
+    align: Alignment,
     require_full_coverage: bool = True,
 ) -> bool:
     """Whether a digit test may be run on the table this report describes.
+
+    The gate reads the disagreement rate at the digit positions the intended test consumes,
+    and takes the worst of them. It does not read the pooled rate over all positions: that is
+    an average, and a table whose leading digit is misread in 3 percent of five-digit cells
+    has a pooled rate of 0.6 percent while its first-digit error rate is 3 percent.
 
     Parameters
     ----------
@@ -420,6 +444,16 @@ def digit_tests_permitted(
         The threshold, which the caller must choose and state. There is no default because
         there is no published standard for this; whatever is used has to be defended in
         writing next to the result.
+    positions : sequence of int
+        The digit positions the intended test reads, numbered from 1 in the report's
+        alignment: ``(1,)`` with ``align="leading"`` for a first-digit test, ``(1, 2)`` for a
+        first-two-digits test, ``(1,)`` with ``align="trailing"`` for a terminal-digit test.
+        Required, for the same reason the threshold is: the rate that matters depends on the
+        test.
+    align : {"leading", "trailing"}
+        The end the positions are counted from. It must match the alignment the report was
+        computed with, because position 1 means the first significant digit under one and the
+        last printed digit under the other.
     require_full_coverage : bool, default True
         Also require that the two transcriptions describe the same table and cover the same
         cells. A rate computed over half a table says nothing about the other half.
@@ -427,14 +461,17 @@ def digit_tests_permitted(
     Returns
     -------
     bool
-        True when the measured digit disagreement rate is at or below the threshold and, if
-        required, the coverage is complete.
+        True when the disagreement rate at every requested position, each over its own
+        ``n_compared``, is at or below the threshold and, if required, the coverage is
+        complete.
 
     Raises
     ------
     ValueError
-        If the threshold is not in [0, 1], or if nothing was compared, since an empty
-        comparison has a rate of zero and would otherwise pass every threshold.
+        If the threshold is not in [0, 1]; if ``positions`` is empty or holds anything other
+        than an integer from 1 up; if ``align`` differs from the report's alignment; or if
+        nothing was compared at a requested position, since an empty comparison has a rate
+        of zero and would otherwise pass every threshold.
     """
     if not 0.0 <= max_digit_disagreement_rate <= 1.0:
         raise ValueError("max_digit_disagreement_rate must lie in [0, 1]")
@@ -442,6 +479,24 @@ def digit_tests_permitted(
         raise ValueError(
             "no digit positions were compared; a rate of zero here means no evidence, not agreement"
         )
+    wanted = tuple(positions)
+    if not wanted:
+        raise ValueError("name the digit positions the test reads, e.g. positions=(1,)")
+    if any(isinstance(p, bool) or not isinstance(p, int) or p < 1 for p in wanted):
+        raise ValueError("digit positions are integers counted from 1")
+    if align != report.align:
+        raise ValueError(
+            f"the report was aligned {report.align!r} but the positions were given as "
+            f"{align!r}; recompute the comparison with the alignment the test reads"
+        )
+    stats = {p.position: p for p in report.by_position}
+    unseen = [p for p in wanted if p not in stats or stats[p].n_compared == 0]
+    if unseen:
+        raise ValueError(
+            f"no digits were compared at position(s) {unseen}; "
+            "a rate of zero there means no evidence, not agreement"
+        )
     if require_full_coverage and not report.same_table:
         return False
-    return report.digit_disagreement_rate <= max_digit_disagreement_rate
+    worst = max(stats[p].rate for p in wanted)
+    return worst <= max_digit_disagreement_rate

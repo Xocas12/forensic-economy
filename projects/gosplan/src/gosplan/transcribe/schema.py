@@ -286,9 +286,10 @@ class ParsedNumber:
     kind : str
         ``"number"``, ``"nil"``, ``"no_data"``, ``"blank"`` or ``"unparsable"``.
     digits : str
-        Significant decimal digits with sign, separators and decimal mark removed, in printed
-        order. This is what the double-transcription comparison counts disagreements over,
-        and what a first-digit or first-two-digit test would consume.
+        Every printed decimal digit, with sign, separators and decimal mark removed, in printed
+        order. Zeros that only pad a value below one are kept (``0,06`` gives ``006``), so
+        this is the string a terminal-digit test reads from its right-hand end, not the one a
+        first-digit test reads from its left; for that, see :attr:`significant_digits`.
     decimals : int
         Number of digits printed after the decimal mark. Drives the rounding tolerance used
         when checking a printed total against the sum of its addends.
@@ -301,6 +302,23 @@ class ParsedNumber:
     digits: str = ""
     decimals: int = 0
     negative: bool = False
+
+    @property
+    def significant_digits(self) -> str:
+        """The digits from the first non-zero one onwards.
+
+        This is what a first-digit or first-two-digit test consumes: a Benford-type test
+        takes the significand of the value, so the zeros that pad ``0,06`` are not its first
+        digit. A value of zero has no significant digits and gives an empty string.
+
+        Examples
+        --------
+        >>> parse_printed_number("0,06").significant_digits
+        '6'
+        >>> parse_printed_number("100,5").significant_digits
+        '1005'
+        """
+        return self.digits.lstrip("0")
 
 
 def parse_printed_number(

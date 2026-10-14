@@ -140,6 +140,24 @@ def test_printed_numbers_parse_with_soviet_conventions(raw, value, digits, decim
     assert got.decimals == decimals
 
 
+@pytest.mark.parametrize(
+    ("raw", "digits", "significant"),
+    [
+        ("0,06", "006", "6"),
+        ("0,5", "05", "5"),
+        ("0,0", "00", ""),
+        ("100,00", "10000", "10000"),
+        ("1 234,5", "12345", "12345"),
+    ],
+)
+def test_padding_zeros_are_not_the_first_significant_digit(raw, digits, significant):
+    """A first-digit test reads the significand; the zeros padding 0,06 are not its digits."""
+    got = parse_printed_number(raw)
+    assert got.digits == digits, "the printed string keeps every digit, for a terminal test"
+    assert got.significant_digits == significant
+    assert not got.significant_digits.startswith("0")
+
+
 @pytest.mark.parametrize("mark", ["-", EN_DASH, EM_DASH])
 def test_nil_marks_are_not_zero(mark):
     got = parse_printed_number(mark)
