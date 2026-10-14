@@ -25,7 +25,7 @@ it is not.
 |---|---|---|
 | `elections` | strong: three published, replicable signatures | calibrate digit and bunching methods |
 | `aaer` | strong but selection-biased: enforcement actions | calibrate supervised and positive-unlabelled learning |
-| `china` | partial: admitted episodes and a reform discontinuity | calibrate cross-source reconciliation |
+| `china` | partial: admitted episodes (the 2019 reform is a dated break, not a label) | calibrate cross-source reconciliation |
 | `gosplan` | almost none: **one** anchor event | **the target** |
 
 **Unifying hypothesis.** Distortion concentrates at discontinuities in the incentive function.

@@ -212,6 +212,9 @@ only. Nothing has been fetched, no panel exists, and no number in this tree is a
 - **What model of the reform's legitimate revisions does the cross-province contrast rest
   on?** Every province's figures move at 2019 for the method change and the census, and the
   contrast attributes to misreporting only what that model leaves unexplained. It has to say
-  how the method and census revisions are distributed across provinces, and which covariates
-  it conditions on, and it has to be fixed before the revisions are seen. Without it the
-  reform supports no misreporting claim.
+  how the method and census revisions are distributed across provinces, which covariates it
+  conditions on, and how it removes the error the two inputs share (honest error in a
+  pre-reform figure shows up both as excess growth and as its correction at the reform), and
+  it has to be fixed before the revisions are seen, together with the window and how each
+  input is reduced to one value per province. Without it the reform supports no misreporting
+  claim.

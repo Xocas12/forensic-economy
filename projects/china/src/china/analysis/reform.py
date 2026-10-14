@@ -300,13 +300,19 @@ def cross_province_reform_contrast(
     misreporting part. The contrast reads the association between revision and excess growth
     as misreporting, so it identifies anything only under the assumption that, once
     ``revision_model`` is accounted for, the legitimate part is unrelated to excess growth.
-    That assumption is not free. A province whose output is concentrated in head offices and
-    services can outrun an electricity proxy (``docs/known_traps.md``, trap 5) and also lose
-    more to the removal of double counting, which would produce the predicted association with
-    no misreporting. The model has to say how the legitimate revisions are distributed across
-    provinces, and which covariates it conditions on, before the revisions are looked at; it
-    must not be fitted to the revisions it is meant to explain. Any error in it passes one for
-    one into the misreporting estimate. Hence ``revision_model`` has no default.
+    That assumption is not free, and it fails in at least two ways the model has to address.
+    A province whose output is concentrated in head offices and services can outrun an
+    electricity proxy (``docs/known_traps.md``, trap 5) and also lose more to the removal of
+    double counting. And the two inputs share their error: residuals taken from an edition
+    published before the reform, which is where pre-reform inflation would show, rest on the
+    same reported figures that the revisions rewrite, so honest error in a province's
+    pre-reform figure enters both, an overstated figure raising its excess growth and then
+    being revised down at the reform. Either produces the predicted association with no
+    misreporting at all. The model has to say how the legitimate revisions are distributed
+    across provinces, which covariates it conditions on, and how it removes the error the two
+    inputs share, before the revisions are looked at; it must not be fitted to the revisions it
+    is meant to explain. Any error in it passes one for one into the misreporting estimate.
+    Hence ``revision_model`` has no default.
 
     Parameters
     ----------
@@ -314,12 +320,21 @@ def cross_province_reform_contrast(
         How much each province's figures moved across the reform, from
         :func:`vintage_revision_at_reform`, as a share of the earlier value.
     excess_growth : pandas.DataFrame
-        Each province's pre-reform growth in excess of what its proxies imply, from
-        :func:`china.analysis.proxies.proxy_residuals`, over the same data years.
+        Each province's pre-reform growth in excess of what its proxies imply, one value per
+        province: the change in its combined residual from
+        :func:`china.analysis.proxies.proxy_residuals` across the pre-reform data years the
+        revisions cover. The change, not the level: the within-province fit that
+        :func:`china.analysis.proxies.proxy_elasticities` defaults to gives each province its
+        own intercept, so a residual's level is measured from that province's own fitted
+        relationship and averages to zero over the years it was fitted on. Both inputs are on
+        ``grp_nominal``, the default series of both functions, so this is excess *nominal*
+        growth; pairing it with real growth at provincial deflators mixes the two
+        (``docs/known_traps.md``, trap 4).
     revision_model : object
         The stated model of the legitimate revisions: the expected method-change and
         census revision for each province, or the covariates given which the legitimate
-        revision is assumed unrelated to ``excess_growth``, with the reason for believing it.
+        revision is assumed unrelated to ``excess_growth``, with the reason for believing it,
+        and how it removes the error that ``revisions`` and ``excess_growth`` share.
         Required, because without it the contrast measures nothing in particular, and which
         model to use is a pre-registration decision that has not been taken.
 
@@ -338,7 +353,10 @@ def cross_province_reform_contrast(
     Notes
     -----
     What remains: two extracted vintages either side of the reform, the proxy residuals, and
-    the model, which has not been chosen. With 31 provinces this contrast has little power,
+    the model, which has not been chosen. Also not chosen, and fixed with the model before the
+    revisions are seen: which pre-reform data years form the window, whether the residual's
+    change is taken between end points or as a fitted trend, and how the per-year revisions
+    are reduced to one value per province. With 31 provinces this contrast has little power,
     and that has to be reported alongside whatever it finds.
     """
     raise NotImplementedError(
