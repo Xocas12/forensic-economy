@@ -11,6 +11,13 @@ fit for that job rejects such provinces at the nominal rate. The driver bound th
 replaced, ``elasticity**2 * Var(proxy)``, is run on the same draws to show that they are draws
 on which a floor with the wrong size is visible.
 
+The nominal rate holds under conditions the stubs state as preconditions, and the size tests
+build them in: ``c`` is the same in the window it is estimated on and the window it tests, and
+growth and proxy noise are drawn independently year to year. They also estimate ``c`` on
+earlier years that were reported honestly, which is what lets a smoothed report show. The
+last three tests take each of these away and pin down what happens, so the stated caveats
+cannot drift from what the design does.
+
 When the phase opens and the stubs are implemented, these tests should run against the real
 functions in place of the reference, unchanged.
 
@@ -237,6 +244,34 @@ def _known_response(floor, growth, proxy, response):
     )
 
 
+def _against_earlier_response(floor, test, growth, proxy, earlier_growth, earlier_proxy):
+    """The test with ``c`` estimated per province on the earlier window, its error carried in.
+
+    Returns the test result and the earlier-window fit, for the provinces that have a floor.
+    """
+    earlier, usable = _earlier_response(earlier_growth, earlier_proxy)
+    floors = floor(
+        growth[usable],
+        proxy[usable],
+        proxy_response=earlier["slope"],
+        response_se=earlier["slope_se"],
+        response_years=EARLIER_RANGE,
+        response_source="synthetic: least squares on the earlier window",
+    )
+    return test(growth[usable], floors), earlier
+
+
+def _persistent(rng: np.random.Generator, ar: float, sd: float) -> np.ndarray:
+    """Stationary AR(1) draws over the tested years with marginal sd ``sd``, per province."""
+    shape = (len(TESTED_YEARS), N_PROVINCES)
+    innovations = rng.normal(0.0, sd * np.sqrt(1.0 - ar**2), size=shape)
+    draws = np.empty(shape)
+    draws[0] = rng.normal(0.0, sd, size=N_PROVINCES)
+    for t in range(1, shape[0]):
+        draws[t] = ar * draws[t - 1] + innovations[t]
+    return draws
+
+
 # --- the tests ------------------------------------------------------------------------------
 
 
@@ -294,10 +329,12 @@ def test_the_documented_floor_rejects_honest_indicator_provinces_at_the_nominal_
     assert SIZE_BAND[0] <= rate <= SIZE_BAND[1], f"c known exactly: {rate:.4f}"
 
     # c estimated on the same provinces' earlier years, which do not overlap the tested ones,
-    # with its standard error carried into the statistic. It never rejects more often than
-    # nominal. Once the proxy is noisier than output, twelve earlier years pin c down poorly,
-    # some provinces lose their floor altogether, and the test turns conservative: honest
-    # provinces are still safe, but power is lost, which is the price of a per-province c.
+    # with its standard error carried into the statistic, and with the provinces' response the
+    # same in both windows. It then never rejects more often than nominal; a response that
+    # moved between the windows does, and is tested separately below. Once the proxy is
+    # noisier than output, twelve earlier years pin c down poorly, some provinces lose their
+    # floor altogether, and the test turns conservative: honest provinces are still safe, but
+    # power is lost, which is the price of a per-province c.
     earlier_growth, earlier_proxy, _ = _indicator_provinces(
         rng,
         response=response,
@@ -409,3 +446,87 @@ def test_the_documented_floor_flags_a_smoothed_report_and_not_a_smoothed_economy
     smoothed_proxy = 1.0 * smoothed_real + (proxy - 1.0 * real)  # same proxy noise
     honest = test(smoothed_real, _known_response(floor, smoothed_real, smoothed_proxy, 1.0))
     assert SIZE_BAND[0] <= _rejection_rate(honest) <= SIZE_BAND[1]
+
+
+@pytest.mark.parametrize("noise_sd", [0.3, 1.2])
+@pytest.mark.parametrize("drift", [0.8, 1.2], ids=["response-fell", "response-rose"])
+def test_a_response_that_moved_between_the_windows_shifts_the_size(drift, noise_sd):
+    """Why ``c`` has to be the response in the tested window, not only estimated outside it.
+
+    The size test above keeps the provinces' response the same in both windows. Here it is 1
+    in the earlier window and ``drift`` in the tested one, and ``c`` is estimated on the
+    earlier window as before. A response that rose rejects honest provinces more often than
+    nominal, at low and high proxy noise alike. One that fell makes the test conservative.
+    """
+    floor, test = _design()
+    rng = np.random.default_rng([3306, int(drift * 10), int(noise_sd * 10)])
+    earlier_growth, earlier_proxy, _ = _indicator_provinces(
+        rng, response=1.0, noise_sd=noise_sd, noise_in_levels=False, years=EARLIER_YEARS
+    )
+    growth, proxy, _ = _indicator_provinces(
+        rng, response=drift, noise_sd=noise_sd, noise_in_levels=False
+    )
+    result, _ = _against_earlier_response(floor, test, growth, proxy, earlier_growth, earlier_proxy)
+    rate = _rejection_rate(result)
+    if drift > 1:
+        assert rate > SIZE_BAND[1], f"response rose to {drift}: {rate:.4f}"
+    else:
+        assert rate < SIZE_BAND[0], f"response fell to {drift}: {rate:.4f}"
+
+
+@pytest.mark.parametrize("noise_sd", [0.3, 1.2])
+@pytest.mark.parametrize(
+    ("growth_ar", "noise_ar"),
+    [(0.7, 0.0), (0.0, 0.7), (0.7, 0.7)],
+    ids=["persistent-growth", "persistent-proxy-noise", "both-persistent"],
+)
+def test_the_slope_test_holds_its_size_only_if_growth_and_proxy_noise_are_not_both_persistent(
+    growth_ar, noise_ar, noise_sd
+):
+    """The serial-independence precondition ``underdispersion_by_province`` states.
+
+    Every other test here draws growth and proxy noise independently year to year. With
+    ``c`` known, persistence in one of them leaves the size at nominal. Persistence in both
+    makes the least-squares standard error of the slope too small, and honest provinces are
+    rejected too often.
+    """
+    floor, test = _design()
+    rng = np.random.default_rng([3307, int(growth_ar * 10), int(noise_ar * 10), int(noise_sd * 10)])
+    real = GROWTH_MEAN + _persistent(rng, growth_ar, GROWTH_SD)
+    growth = _frame(real, TESTED_YEARS)
+    proxy = _frame(1.0 * real + _persistent(rng, noise_ar, noise_sd), TESTED_YEARS)
+    rate = _rejection_rate(test(growth, _known_response(floor, growth, proxy, 1.0)))
+    if growth_ar and noise_ar:
+        assert rate > SIZE_BAND[1] + 0.02, f"both persistent: {rate:.4f}"
+    else:
+        assert SIZE_BAND[0] <= rate <= SIZE_BAND[1], f"one persistent: {rate:.4f}"
+
+
+def test_a_response_estimated_on_reports_smoothed_in_both_windows_absorbs_the_smoothing():
+    """Why a ``c`` estimated on reported growth needs years whose reports are honest.
+
+    A province that pulls its report halfway to the mean in the earlier window as well as the
+    tested one gets an earlier-window ``c`` near twice the true response, and against that
+    ``c`` it is flagged no more often than an honest province. Against the true ``c`` the
+    same reports are flagged almost every time, as in the smoothed-report test above.
+    """
+    floor, test = _design()
+    rng = np.random.default_rng(3308)
+    _, earlier_proxy, earlier_report = _indicator_provinces(
+        rng,
+        response=1.0,
+        noise_sd=0.3,
+        noise_in_levels=False,
+        years=EARLIER_YEARS,
+        smoothing=0.5,
+    )
+    _, proxy, report = _indicator_provinces(
+        rng, response=1.0, noise_sd=0.3, noise_in_levels=False, smoothing=0.5
+    )
+    assert _rejection_rate(test(report, _known_response(floor, report, proxy, 1.0))) > 0.9
+
+    result, earlier = _against_earlier_response(
+        floor, test, report, proxy, earlier_report, earlier_proxy
+    )
+    assert 1.8 < earlier["slope"].median() < 2.2
+    assert _rejection_rate(result) <= SIZE_BAND[1]

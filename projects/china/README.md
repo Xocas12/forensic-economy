@@ -118,8 +118,8 @@ in this tree.**
 4. `dispersion` - underdispersion of provincial growth against a variance floor from the
    physical proxies. They are indicators of output, not drivers, so the floor is their
    covariance with reported growth divided by a response `c` estimated outside the tested
-   window. It is never the driver bound `elasticity**2 * Var(proxy)`, which rejects honest
-   provinces at a rate set by the proxy's own noise.
+   window and still valid in it. It is never the driver bound `elasticity**2 * Var(proxy)`,
+   which rejects honest provinces at a rate set by the proxy's own noise.
 5. `bunching` - excess mass at the provincial growth target.
 
 Two of these carry a caveat that has to travel with any result they ever produce. The proxy

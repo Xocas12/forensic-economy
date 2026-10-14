@@ -33,8 +33,13 @@ computes, with ``c`` taken from outside the tested window, and
 :func:`underdispersion_by_province` tests against it with the sampling error of both the floor
 and ``c`` carried into the statistic. ``tests/test_dispersion_floor.py`` checks by simulation
 that this design rejects honest synthetic indicator-proxy provinces at the nominal rate when
-``c`` is known, and never above it when ``c`` is estimated on earlier years, on the same draws
-where the driver bound misses the nominal rate in both directions.
+``c`` is known, and never above it when ``c`` is estimated on earlier years and stays the same
+across the two windows, on the same draws where the driver bound misses the nominal rate in
+both directions. Those draws are serially independent. The size holds only under the two
+conditions the simulation builds in, and the same file shows what breaks without them: a
+response that has risen since the years it was estimated on, and growth and proxy noise that
+are both persistent, each reject honest provinces too often. Both are preconditions of the
+test, stated under :func:`proxy_implied_floor` and :func:`underdispersion_by_province`.
 
 The trap, and it is a serious one here: provinces genuinely smooth their growth by managing
 real activity, especially credit and infrastructure investment. Underdispersion in reported
@@ -141,6 +146,31 @@ def proxy_implied_floor(
         on the window being tested, in any functional form: a ``c`` fitted there is fitted on
         the variance it is meant to bound. :func:`china.analysis.proxies.proxy_elasticities`
         is not a source for it.
+
+        Estimated outside the window, it must still be **the response in the tested
+        window**: the floor assumes the ``c`` it is given is the ``c`` of the years it tests.
+        The proxy relationships are known to move (trap 5 for electricity and rail freight),
+        and a response that has risen since the years it was estimated on rejects honest
+        provinces too often. In simulation, with ``c`` estimated per province on twelve
+        earlier years, honest provinces were rejected about 4 per cent of the time while the
+        response stayed put. A response 10 per cent higher in the tested window rejected about
+        19 per cent of them at proxy noise sd 0.3pp and 6 to 7 per cent at 1.2pp; 20 per cent
+        higher, about 49 and 9 to 10 per cent. Credit is the plausible rising case, as provinces
+        lean on it to hit their targets (trap 6). A response that has fallen makes the test
+        conservative instead, rejecting 0 to 2.5 per cent, which costs power rather than
+        honest provinces. The analysis plan has to test or bound the drift in ``c`` between
+        the two windows before this floor is used.
+
+        A ``c`` estimated on reported growth is valid only on years whose reports are believed
+        honest. A province that smoothed its report in both windows calibrates its own
+        earlier-window ``c`` to its smoothing: with the report pulled halfway to the mean, its
+        ``c`` comes out near twice the true response. In simulation such provinces were then
+        flagged 4 to 5 per cent of the time, the nominal rate, where the true ``c`` flags them
+        99.7 to 99.8 per cent of the time at proxy noise sd 0.3pp and about 88 per cent at
+        0.6pp. A per-province ``c`` from the same province's earlier years is therefore blind
+        to a province that smoothed throughout. A pooled response is diluted by the provinces
+        that did not smooth, and a published one is not touched by the reports at all, which
+        is a reason to prefer either.
     response_se : float or pandas.Series
         Standard error of ``proxy_response``. Required because it enters the statistic in
         :func:`underdispersion_by_province`: treating an estimated ``c`` as exact makes the
@@ -176,19 +206,29 @@ def proxy_implied_floor(
 
     Caveats that have to travel with any result. The floor holds **only if** the proxy's own
     noise is uncorrelated with output growth in the tested window; a proxy whose noise moves
-    with output shifts ``c`` within the window and the floor with it. A report decoupled from
-    activity altogether has a covariance near zero and a floor near zero, so it passes here;
-    that failure shows as a weak proxy relationship and a large residual in
-    :mod:`china.analysis.proxies`, not as underdispersion. And if a province smooths both its
-    economy and its report, the floor falls with the report and the test says nothing. Each
-    of these is a limitation of the test, not a clean bill of health, and must be reported as
-    such.
+    with output shifts ``c`` within the window and the floor with it. It also holds only if
+    ``c`` is the response in the tested window: a response that has risen since the years it
+    was estimated on rejects honest provinces too often, and one that has fallen costs power
+    (see ``proxy_response``). The test against it keeps its size only if growth and the
+    proxy's noise are not both serially correlated (see :func:`underdispersion_by_province`).
+    A report decoupled from activity altogether has a covariance near zero and a floor near
+    zero, so it passes here; that failure shows as a weak proxy relationship and a large
+    residual in :mod:`china.analysis.proxies`, not as underdispersion. If a province smooths
+    both its economy and its report, the floor falls with the report and the test says
+    nothing. And if it smooths its report in the years ``c`` was estimated on as well as in
+    the tested ones, a ``c`` estimated on its own reports absorbs the smoothing and the test
+    says nothing either. Each of these is a limitation of the test, not a clean bill of
+    health, and must be reported as such.
 
     What remains: an out-of-window ``c`` for each proxy. No published response is in the
-    registry, and the yearbook panels this project can build are short, so estimating ``c``
-    on a province's earlier years takes those years away from the test. Which window, and
-    whether per province or pooled, is a question to settle in the analysis plan before G1,
-    not a default to pick here.
+    registry, and the yearbook panels this project can build are short. Estimating ``c`` on a
+    province's earlier years takes those years away from the test, and it cannot see a
+    province that smoothed its report in both windows, because that ``c`` is calibrated to
+    the smoothing. A published response does not have that blind spot, and a pooled one has
+    it only as far as the pool smoothed too. Whichever source is chosen, ``c`` has to hold in
+    the tested window, so the drift in the response between the two windows has to be tested
+    or bounded. Which window, whether per province or pooled, and how the drift is checked
+    are questions to settle in the analysis plan before G1, not defaults to pick here.
     """
     raise NotImplementedError(
         "needs a proxy response c estimated outside the tested window, with its standard "
@@ -213,6 +253,21 @@ def underdispersion_by_province(
     that slope against ``c``: ``t = (slope - c) / sqrt(slope_se**2 + response_se**2)`` on
     ``n - 2`` degrees of freedom, alternative "greater", which is reported growth too smooth
     for its proxy.
+
+    That is the ordinary least-squares slope test, and its nominal size **requires serially
+    independent residuals**: growth, and the proxy's noise around ``c`` times growth, must not
+    both be persistent. The library states the same independence assumption for
+    :func:`~forensics_core.dispersion.underdispersion.variance_floor_test`. In simulation with
+    ``c`` known, persistence in only one of them left the rejection rate on honest provinces
+    at 4.6 to 5.4 per cent, as did a steady decline in growth. With both AR(1) at the same
+    coefficient it rose to about 8 per cent at 0.5, 11 to 12.5 per cent at 0.7 and 17 to 18
+    per cent at 0.9, at proxy noise sd 0.3pp and 1.2pp alike. Provincial growth is
+    persistent, and the slow structural shifts of ``docs/known_traps.md`` trap 5 are
+    persistent proxy noise, so the condition cannot be assumed here. The analysis plan has to
+    do one of two things before the test is run: specify an autocorrelation-robust standard
+    error, whose own size with about a dozen years then has to be checked, or check this
+    test's size on a simulation with persistence in growth and proxy noise matched to the
+    panel, and report the calibrated rate.
 
     Parameters
     ----------
@@ -243,7 +298,8 @@ def underdispersion_by_province(
     -----
     What remains: the multiple-comparison policy. Thirty-one provinces tested at once will
     produce one or two nominally significant results by chance, so the reported quantity has
-    to be a corrected one, decided before the test is run.
+    to be a corrected one, decided before the test is run. And the treatment of serial
+    correlation above, a robust standard error or a calibrated size, decided at the same time.
     """
     raise NotImplementedError(
         "needs growth_series and proxy_implied_floor, and a multiple-comparison correction "
