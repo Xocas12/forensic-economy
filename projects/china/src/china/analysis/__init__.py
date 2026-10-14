@@ -24,9 +24,10 @@ The five tests, and why each one is here
     from these relationships is what separates a province that hit its target by managing
     real activity from one that hit it on paper.
 :mod:`china.analysis.dispersion`
-    Underdispersion: a reported series with less variance than its physical driver permits is
-    impossible regardless of level. This is one of the two signals that carry to the Soviet
-    case.
+    Underdispersion: a reported series with less variance than its physical proxies permit is
+    impossible regardless of level. The proxies are indicators of output, not drivers, so the
+    floor comes from their covariance with reported growth, never from their own variance.
+    This is one of the two signals that carry to the Soviet case.
 :mod:`china.analysis.bunching`
     Excess mass at the provincial growth target. The other transferable signal, and the one
     that needs a source this project does not yet have: the targets themselves.
