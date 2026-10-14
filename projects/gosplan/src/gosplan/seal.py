@@ -39,16 +39,30 @@ those tables print, not only from English working labels:
   spelling and the common transliterations of it (``khlopok``, ``hlopok``, ``xlopok``).
   :data:`UZBEK_SSR_PARTS` holds the republic, the Karakalpak ASSR and the oblasts, because a
   table by oblast is a breakdown of the anchor too; :data:`COTTON` holds the series.
+* **The vocabulary rules a label out by default.** A readable label that names nothing in it
+  is read as some other place or product: ``Kolkhozy``, a district, an abbreviation the list
+  lacks. It is a deny-list. Refusing every label that cannot be mapped to a known region or
+  series would need a vocabulary of every place and product a Soviet table prints, and this
+  module does not have one.
 * **Periods** are read with the transcription validator's own parser, so a plan period
   (``1976-1980``) or a crop year (``1984/85``) is held out whenever it overlaps the window.
 * **A transcription is read through every column that says what a cell is**: both labels and
   their transliterations, the table heading, the volume and the definition note. Republics are
   printed as columns as often as rows, and in the Uzbek republic annual the region is named
   only on the title page.
+* **Only a stub can rule a transcribed cell's region out.** A cell is placed by its row stub
+  and its column head; the heading, the volume and the definition note describe the whole
+  table. Any of them can show that a cell is in the anchor's region, but a heading that names
+  no region (``Proizvodstvo khlopka-syrtsa``) says nothing about which region a row is, so the
+  table-level columns never show that a cell is somewhere else.
 * **Fail closed on values, not only on columns.** A row whose region, series or period is
   blank, carries no letters (a numeric code), or is in a script the fold cannot read, is one
   the seal cannot classify. While the seal is on that refuses the whole frame, unless another
   of the row's fields already shows it is not the anchor (a Kazakh row, a wheat series, 1990).
+  In a transcription the same goes for a stub: a row stub or column head with no letters that
+  is not the cell's own period (a row number on the right-hand page of a two-page table, a
+  column number, an item code) may stand for the cell's region or its series, so nothing but
+  the period can rule out a row that has one.
 
 The aggregate question
 ----------------------
@@ -67,11 +81,13 @@ whether the output lets a reader read off, or closely bound, the held-out quanti
 One consequence is enforced rather than left to prose. A table printed by republic carries its
 own union total, and that total minus the other republics IS the Uzbek figure. So when
 :func:`filter_sealed` withholds an anchor cell from a transcription, it also withholds every
-printed total and subtotal that cell was summed into: the cells in the same table and period,
-in the same column or the same row, whose role is not ``data``. A role that is missing or
-unreadable counts as a possible total. The other republics stay. A union total taken from a
-different table can still be differenced against them; that pair is assembled across frames,
-which no single call can see, and it is forbidden in ``docs/HELD_OUT.md``.
+printed total and subtotal in the same column or the same row, within the same table and
+period: every cell there whose role is not ``data``. That is more than the totals the anchor
+was summed into, because the seal does not know which group a subtotal sums: another group's
+subtotal in the anchor's column goes too, and is counted in ``n_withheld``. A role that is
+missing or unreadable counts as a possible total. The other republics stay. A union total
+taken from a different table can still be differenced against them; that pair is assembled
+across frames, which no single call can see, and it is forbidden in ``docs/HELD_OUT.md``.
 
 This is the part of the seal most likely to be argued with later, and it should be: it is a
 judgement about what counts as seeing something, not a fact. See ``docs/HELD_OUT.md``.
@@ -267,46 +283,40 @@ def _names_any(words: tuple[str, ...], forms: tuple[str, ...]) -> bool:
 #:
 #: Forms are written folded (see :func:`fold_label`), so each covers the Russian spelling once
 #: transliterated and any Latin spelling that folds to it. ``tests/test_seal.py`` checks, for
-#: every unit, the Russian name, the Uzbek one in Cyrillic, and Latin spellings from this
-#: project's transliteration, ISO 9 and the scholarly system with their diacritics, English
-#: and Uzbek Latin.
+#: every unit, the Russian name, the Uzbek one in Cyrillic, and several Latin spellings, ISO 9
+#: and the scholarly system with their diacritics among them. Most forms are short stems, so
+#: that the abbreviations tight tables print (``Andizh. obl.``, ``Karakalp. ASSR``) match as
+#: well as the full names; the test spells every unit both ways.
 #:
 #: The list errs towards matching too much, because withholding a row by mistake costs a row
 #: and showing one by mistake costs the project. What it cannot do is recognise a place it does
-#: not name: no district (raion) is in it, and an oblast missing from it would pass. Adding a
-#: form is always safe. A district table for the republic still carries the republic in its
-#: heading or its volume, and a transcription is read through those too.
+#: not name: no district (raion) is in it, and an oblast or an abbreviation missing from it
+#: would pass, because a readable label it does not recognise is read as some other place, not
+#: refused. Adding a form is always safe. A district table for the republic still carries the
+#: republic in its heading or its volume, and a transcription is read through those too.
 UZBEK_SSR_PARTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         "Uzbek SSR": ("uzbek", "zbek", "usbek", "uzssr", "uz", "uzb"),
-        "Karakalpak ASSR": ("karakalpak", "qaraqalpaq", "qoraqalpo"),
-        "Andijan oblast": (
-            "andijan",
-            "andizhan",
-            "andizan",
-            "andidjan",
-            "andidzhan",
-            "andijon",
-            "andizhon",
-        ),
-        "Bukhara oblast": ("bukhar", "buhar", "buxar", "bokhar", "bukhoro", "buhoro", "buxoro"),
+        "Karakalpak ASSR": ("karakalp", "qaraqalp", "qoraqalp", "kkassr"),
+        "Andijan oblast": ("andij", "andiz", "andidj", "andidzh"),
+        "Bukhara oblast": ("bukh", "buhar", "buxar", "bokhar", "buhoro", "buxoro"),
         "Jizzakh oblast": ("jizak", "jizzak", "jizzax", "zhizak", "zhizzak", "dzizak"),
-        "Kashkadarya oblast": ("kashkadar", "kaskadar", "qashqadar"),
+        "Kashkadarya oblast": ("kashkad", "kaskad", "qashqad"),
         "Khorezm oblast": ("horezm", "xorezm", "horazm", "xorazm", "hwarazm", "hwarezm"),
-        "Namangan oblast": ("namangan",),
+        "Namangan oblast": ("namang",),
         "Navoi oblast": ("navoi", "navoy"),
-        "Samarkand oblast": ("samarkand", "samarqand"),
+        "Samarkand oblast": ("samark", "samarq"),
         "Surkhandarya oblast": (
-            "surkhandar",
-            "surhandar",
-            "surxandar",
-            "surkhondar",
-            "surhondar",
-            "surxondar",
+            "surkhand",
+            "surhand",
+            "surxand",
+            "surkhond",
+            "surhond",
+            "surxond",
         ),
         "Syrdarya oblast": ("syrdar", "sirdar"),
-        "Tashkent oblast and city": ("tashkent", "taskent", "toshkent"),
-        "Fergana oblast": ("fergan", "ferghan", "fargona", "farghona"),
+        "Tashkent oblast and city": ("tashk", "taskent", "toshk"),
+        "Fergana oblast": ("ferg", "farg"),
     }
 )
 
@@ -345,6 +355,23 @@ SCHEMA_SERIES_COLUMNS: tuple[str, ...] = (*SCHEMA_REGION_COLUMNS, "definition_no
 
 #: The transcription's period column: ``YYYY``, ``YYYY-YYYY`` or ``YYYY/YY``.
 SCHEMA_PERIOD_COLUMN = "period"
+
+#: The stubs of a transcription, each as printed and transliterated: the row stub and the
+#: column head, which between them place one cell in its table.
+SCHEMA_STUB_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("row_label", "row_label_translit"),
+    ("column_label", "column_label_translit"),
+)
+
+#: Columns of a transcription that describe the whole table rather than one cell. They can
+#: show that a cell is in the anchor's region, never that it is not: a heading that names no
+#: region says nothing about which region each row is.
+SCHEMA_TABLE_LABEL_COLUMNS: tuple[str, ...] = (
+    "title_ru",
+    "title_translit",
+    "volume",
+    "definition_note",
+)
 
 #: A frame holding all of these is read as a transcription, through every column above,
 #: whatever column names the caller passes. All are required fields of the schema, so a blank
@@ -432,6 +459,20 @@ def _read_text(text: str, forms: tuple[str, ...]) -> str:
     if not any(ch.isalpha() for ch in "".join(words)):
         return _SILENT
     return _CLEAR
+
+
+def _stub_names_nothing(label: Any, period: Any) -> bool:
+    """Whether a transcription stub carries no letters and is not the cell's own period.
+
+    A row number on the right-hand page of a two-page table, a column number or an item code
+    stands where a region or a series would be printed, and says neither which of the two it
+    stands for nor what that is. A year printed as a column head is the cell's period, which
+    the seal reads separately, so it is not counted.
+    """
+    if _is_blank(label) or _read_text(str(label), ()) != _SILENT:
+        return False
+    span = _year_span(str(label))
+    return span is None or span != _year_span(period)
 
 
 def _combine_labels(readings: Sequence[tuple[str, bool]]) -> bool | None:
@@ -584,13 +625,24 @@ def unseal(token: str) -> None:
 
 
 @dataclass(frozen=True)
-class _Reading:
-    """Which columns are read for each of region, series and period, and whether each is a
-    required field (a blank in a required field leaves the row unclassified)."""
+class _Source:
+    """One column read for one of region, series and period."""
 
-    region: tuple[tuple[str, bool], ...]
-    series: tuple[tuple[str, bool], ...]
-    period: tuple[tuple[str, bool], ...]
+    column: str
+    #: A blank in a required field leaves the row unclassified.
+    required: bool
+    #: Whether a label here that names something else can rule the anchor out. False for the
+    #: table-level columns of a transcription on the region axis.
+    rules_out: bool = True
+
+
+@dataclass(frozen=True)
+class _Reading:
+    """Which columns are read for each of region, series and period."""
+
+    region: tuple[_Source, ...]
+    series: tuple[_Source, ...]
+    period: tuple[_Source, ...]
     transcription: bool
 
 
@@ -602,7 +654,9 @@ def _reading(
     A frame can be read if it has the caller's three columns, or if it is a transcription
     (it has :data:`SCHEMA_IDENTITY_COLUMNS`). A transcription is always read through all of
     its labelling columns, in addition to whatever the caller named: naming one column can
-    only add to what the seal reads, never narrow it.
+    only add to what the seal reads, never narrow it. So on the region axis a table-level
+    column (:data:`SCHEMA_TABLE_LABEL_COLUMNS`) of a transcription can hold a row but never
+    rule it out, whoever named it.
     """
     present = set(columns)
     caller = {"region": region_col, "series": series_col, "period": year_col}
@@ -611,10 +665,14 @@ def _reading(
     if missing and not transcription:
         return None, missing
 
-    axes: dict[str, list[tuple[str, bool]]] = {k: [] for k in caller}
+    def source(axis: str, col: str, required: bool) -> _Source:
+        table_level = transcription and axis == "region" and col in SCHEMA_TABLE_LABEL_COLUMNS
+        return _Source(col, required, rules_out=not table_level)
+
+    axes: dict[str, list[_Source]] = {k: [] for k in caller}
     for axis, col in caller.items():
         if col in present:
-            axes[axis].append((col, True))
+            axes[axis].append(source(axis, col, True))
     if transcription:
         for axis, cols in (
             ("region", SCHEMA_REGION_COLUMNS),
@@ -622,8 +680,8 @@ def _reading(
             ("period", (SCHEMA_PERIOD_COLUMN,)),
         ):
             for col in cols:
-                if col in present and all(col != seen for seen, _ in axes[axis]):
-                    axes[axis].append((col, col in SCHEMA_IDENTITY_COLUMNS))
+                if col in present and all(col != s.column for s in axes[axis]):
+                    axes[axis].append(source(axis, col, col in SCHEMA_IDENTITY_COLUMNS))
     return (
         _Reading(
             region=tuple(axes["region"]),
@@ -635,21 +693,52 @@ def _reading(
     )
 
 
+def _stubs_naming_nothing(frame: pd.DataFrame) -> list[frozenset[str]]:
+    """For each row of a transcription, the stub columns that name nothing the seal can read.
+
+    A stub is the row stub or the column head, as printed and as transliterated. It names
+    nothing when every label it has carries no letters and is not the cell's own period (see
+    :func:`_stub_names_nothing`). Such a stub may stand for the cell's region or its series,
+    so its columns are read as unreadable on both axes: nothing but the period can then rule
+    the row out, though labels that name the anchor still hold it.
+    """
+    periods = frame[SCHEMA_PERIOD_COLUMN].tolist()
+    out: list[set[str]] = [set() for _ in range(len(frame))]
+    for pair in SCHEMA_STUB_COLUMNS:
+        cols = [c for c in pair if c in frame.columns]
+        values = [frame[c].tolist() for c in cols]
+        for i, period in enumerate(periods):
+            labels = [v[i] for v in values if not _is_blank(v[i])]
+            if labels and all(_stub_names_nothing(label, period) for label in labels):
+                out[i].update(cols)
+    return [frozenset(s) for s in out]
+
+
 def _classify_rows(frame: pd.DataFrame, reading: _Reading, held_out: HeldOut) -> list[bool | None]:
-    def values(cols: tuple[tuple[str, bool], ...]) -> list[list[tuple[Any, bool]]]:
-        per_col = [(frame[c].tolist(), required) for c, required in cols]
-        return [[(vals[i], req) for vals, req in per_col] for i in range(len(frame))]
+    columns = {
+        s.column: frame[s.column].tolist()
+        for s in (*reading.region, *reading.series, *reading.period)
+    }
+    unread = _stubs_naming_nothing(frame) if reading.transcription else [frozenset()] * len(frame)
 
-    regions = values(reading.region)
-    series = values(reading.series)
-    periods = values(reading.period)
+    def axis(sources: tuple[_Source, ...], forms: tuple[str, ...], i: int) -> bool | None:
+        readings = []
+        for s in sources:
+            if s.column in unread[i]:
+                r = _UNREAD
+            else:
+                r = _read_label(columns[s.column][i], forms)
+                if r == _CLEAR and not s.rules_out:
+                    r = _SILENT
+            readings.append((r, s.required))
+        return _combine_labels(readings)
+
     series_forms = held_out.series_forms
-
     out: list[bool | None] = []
-    for r_vals, s_vals, p_vals in zip(regions, series, periods, strict=True):
-        region = _combine_labels([(_read_label(v, held_out.region), q) for v, q in r_vals])
-        ser = _combine_labels([(_read_label(v, series_forms), q) for v, q in s_vals])
-        statuses = [held_out.period_status(v) for v, _ in p_vals]
+    for i in range(len(frame)):
+        region = axis(reading.region, held_out.region, i)
+        ser = axis(reading.series, series_forms, i)
+        statuses = [held_out.period_status(columns[s.column][i]) for s in reading.period]
         if any(s is True for s in statuses):
             period: bool | None = True
         elif any(s is None for s in statuses):
@@ -673,17 +762,19 @@ def held_out_mask(
     A frame with the transcription schema's columns is read through all of its labelling
     columns (:data:`SCHEMA_REGION_COLUMNS`, :data:`SCHEMA_SERIES_COLUMNS`, ``period``) as well
     as any of ``region_col``, ``series_col`` and ``year_col`` it has. Any other frame is read
-    through those three.
+    through those three. In a transcription only a stub can rule a cell's region out, and a
+    stub with no letters that is not the cell's period leaves both region and series open.
 
     Raises
     ------
     SealedError
         While the seal is on, if the frame lacks a column needed to identify held-out rows, or
         if any row cannot be classified: its region, series or period is blank, carries no
-        letters, or cannot be read, and nothing else in the row shows it is not the anchor. A
-        frame that cannot be checked is refused rather than passed through: silently letting
-        an unidentifiable frame past is exactly the failure this module exists to prevent, and
-        a table with no region column may well BE the Uzbek series.
+        letters, or cannot be read (in a transcription, a stub such as a row number counts),
+        and nothing else in the row shows it is not the anchor. A frame that cannot be checked
+        is refused rather than passed through: silently letting an unidentifiable frame past
+        is exactly the failure this module exists to prevent, and a table with no region
+        column may well BE the Uzbek series.
     """
     import numpy as np
 
@@ -704,12 +795,14 @@ def held_out_mask(
     unknown = [i for i, s in enumerate(statuses) if s is None]
     if unknown and is_sealed():
         first = unknown[0]
-        cols = [c for c, _ in (*reading.region, *reading.series, *reading.period)]
+        cols = [s.column for s in (*reading.region, *reading.series, *reading.period)]
         shown = {c: frame[c].iloc[first] for c in dict.fromkeys(cols)}
         raise SealedError(
             f"cannot tell whether this frame contains the held-out anchor: {len(unknown)} "
             f"row(s) have a region, series or period that is blank, has no letters, or cannot "
-            f"be read, and nothing else in the row rules the anchor out. First: row "
+            f"be read (in a transcription, a row stub or column head with no letters that is "
+            f"not the cell's period, such as a row number, counts), and nothing else in the "
+            f"row rules the anchor out. First: row "
             f"{frame.index[first]!a}, {shown!a}. Labels are read in Latin or Cyrillic, periods "
             "as YYYY, YYYY-YYYY or YYYY/YY. Fix the rows, or if the frame provably contains no "
             "Uzbek cotton data for 1976-1985, say so explicitly by passing declare_clean=True "
@@ -719,12 +812,14 @@ def held_out_mask(
 
 
 def _with_printed_totals(frame: pd.DataFrame, mask: Any) -> Any:
-    """Extend a mask of anchor cells to the printed totals and subtotals they were summed into.
+    """Extend a mask of anchor cells to every printed total and subtotal in their columns and
+    rows.
 
     Only a transcription carries the layout this needs. A total is a cell in the same table
     and period as a withheld cell, in its column with a ``row_role`` other than ``data`` or in
     its row with a ``column_role`` other than ``data``. Repeated until nothing changes, so a
-    grand total reached through a row total goes too.
+    grand total reached through a row total goes too. The roles do not say which cells a
+    subtotal sums, so every subtotal there goes, another group's included.
     """
     import numpy as np
 
@@ -786,9 +881,11 @@ def filter_sealed(
 
     A transcription is filtered as transcribed, before it is reshaped: its own columns say
     what each cell is (see :func:`held_out_mask`), and its row and column roles say which
-    printed totals an anchor cell was summed into. Those totals are withheld with it, and
-    counted in ``n_withheld``, because a table's own union total minus the other republics is
-    the anchor.
+    cells are printed totals. Every printed total and subtotal in the same column or row as an
+    anchor cell, within its table and period, is withheld with it and counted in
+    ``n_withheld``, because a table's own union total minus the other republics is the anchor.
+    A subtotal of another group in that column goes too, since the roles do not say what each
+    subtotal sums.
 
     ``declare_clean=True`` asserts that the caller knows the frame contains no held-out data,
     for tables that legitimately lack a region or series column. It is an assertion by the
@@ -852,7 +949,7 @@ def check_grouping(
     reading, _ = _reading(frame.columns, region_col, series_col, year_col)
     region_keys = {region_col}
     if reading is not None:
-        region_keys.update(c for c, _ in reading.region)
+        region_keys.update(s.column for s in reading.region)
     if not region_keys.intersection(keys):
         return
     mask = held_out_mask(

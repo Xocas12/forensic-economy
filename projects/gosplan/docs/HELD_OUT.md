@@ -45,16 +45,34 @@ tables print, not only English working labels.
   their transliterations, the heading in Russian and in transliteration, the volume and the
   definition note. Republics are printed as columns as often as rows, and the republic's own
   annual names the republic only on its title page.
+- **In a transcription, only a stub can rule a cell's region out.** A cell is placed by its row
+  stub and its column head; the heading, the volume and the definition note describe the whole
+  table. Any of them can show that a cell is in the Uzbek SSR, but a heading that names no
+  region (`Proizvodstvo khlopka-syrtsa`) says nothing about which region a row is, so they
+  never show that a cell is somewhere else.
 - **The seal fails closed on values, not only on missing columns.** A row whose region, series
   or period is blank, has no letters in it (a numeric code), or is in a script the fold cannot
   read refuses the whole frame, unless something else in the row already rules the anchor out.
-  A Kazakh row with an unreadable period is fine; an Uzbek cotton row with one is not.
+  A Kazakh row with an unreadable period is fine; an Uzbek cotton row with one is not. In a
+  transcription a stub with no letters that is not the cell's own period (a row number on the
+  right-hand page of a two-page table, a column number, an item code) may stand for the cell's
+  region or its series, so a row with one is ruled out by its period alone: numbered rows of a
+  raw-cotton table for 1980 refuse the frame, and so do numbered rows of a grain table. Labels
+  that name the anchor still withhold the row: numbered rows in the republic's own annual go.
 
 What the vocabulary cannot do is recognise a place it does not name. No district (raion) is in
 it. A district table for the republic still names the republic in its heading or its volume,
 and a transcription is read through those. A loader that copies row stubs into a frame of its
 own and drops the heading and the volume loses that, which is why a transcription is filtered
 as transcribed, before it is reshaped.
+
+It is also a deny-list. A readable label that names nothing in the vocabulary is read as some
+other place or product, not refused: `Kolkhozy`, a district, an abbreviation the list lacks.
+Most of its forms are short stems, so the abbreviations tight tables print (`Andizh. obl.`,
+`Karakalp. ASSR`) are caught, and the tests spell every unit that way too, but an abbreviation
+outside the list would pass. Refusing every row whose region or series cannot be mapped to a
+known one would need a vocabulary of every place and product a Soviet table prints, and the
+seal does not have one.
 
 ## What you may and may not do
 
@@ -92,11 +110,14 @@ A table printed by republic carries its own union total, and that total minus th
 republics *is* the Uzbek figure. Withholding the Uzbek row and leaving the rest would hand over
 every by-republic table with the differencing pair already in it. So when `filter_sealed`
 withholds an anchor cell from a transcription, it also withholds every printed total and
-subtotal that cell was summed into: the cells in the same table and period, down its column
-with a `row_role` other than `data`, or along its row with a `column_role` other than `data`,
-repeated until nothing changes so that a grand total goes too. A role that is blank or missing
-counts as a possible total, so a table with no roles loses the whole period. The withheld
-totals are counted in `n_withheld`.
+subtotal in the same column or row, within the same table and period: the cells down its
+column with a `row_role` other than `data`, and along its row with a `column_role` other than
+`data`, repeated until nothing changes so that a grand total goes too. That is more than the
+totals the anchor was summed into. The roles say which cells are totals, not which cells each
+one sums, so in a table with several regional subtotals the other groups' subtotals in the
+anchor's column go as well (Transcaucasia with Central Asia). A role that is blank or missing
+counts as a possible total, so a table with no roles loses the whole period. Every withheld
+total is counted in `n_withheld`.
 
 The other republics stay. That is the narrower of the two ways to break the pair, and it keeps
 every non-Uzbek figure usable; it does not stop a union total *from another table* being set

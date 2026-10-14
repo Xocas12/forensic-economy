@@ -82,7 +82,7 @@ make validate-sources
 
 ## Status
 
-1,373 tests pass. The shared library, the source registries and the acquisition pipelines are
+1,426 tests pass. The shared library, the source registries and the acquisition pipelines are
 built, and one of the three projects now has its data in hand.
 
 **aaer** — the Bao et al. (2020) replication panel is acquired, loaded, tested and described:
@@ -119,7 +119,7 @@ Five repositories, one programme. All public.
 | [psephos](https://github.com/Xocas12/psephos) | standalone election anomaly-detection tool, CLI and library | works; 47 tests |
 | [forensics-core](https://github.com/Xocas12/forensics-core) | the shared method library | implemented; 840 tests; carried the elections result |
 | [forensic-elections](https://github.com/Xocas12/forensic-elections) | Russian federal elections, the calibration project | **anchors 1 and 3 reproduced on real data**; 914 tests |
-| [forensic-economy](https://github.com/Xocas12/forensic-economy) | accounting enforcement, Chinese provincial statistics, Soviet statistics | data acquired for aaer; no analysis run; 1,373 tests |
+| [forensic-economy](https://github.com/Xocas12/forensic-economy) | accounting enforcement, Chinese provincial statistics, Soviet statistics | data acquired for aaer; no analysis run; 1,426 tests |
 | [gosplan-env](https://github.com/Xocas12/gosplan-env) | multi-agent environment where reporting pathologies emerge from incentives | reference dynamics implemented and runnable; no learning agent yet |
 
 The calibration project has been run and has a result. This repository holds the two projects

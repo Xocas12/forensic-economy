@@ -265,13 +265,25 @@ KOLKHOZY_RU = "\u041a\u043e\u043b\u0445\u043e\u0437\u044b"  # Kolkhozy
 SOVKHOZY_RU = "\u0421\u043e\u0432\u0445\u043e\u0437\u044b"  # Sovkhozy
 THOUSAND_TONNES_RU = "\u0442\u044b\u0441. \u0442"  # tys. t
 PAKHTA_UZ = "\u043f\u0430\u0445\u0442\u0430"  # pakhta, Uzbek for cotton
+MAIN_PRODUCTS_TITLE_RU = (  # Proizvodstvo vazhneishikh vidov produktsii, which names no product
+    "\u041f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0441\u0442\u0432\u043e "
+    "\u0432\u0430\u0436\u043d\u0435\u0439\u0448\u0438\u0445 \u0432\u0438\u0434\u043e\u0432 "
+    "\u043f\u0440\u043e\u0434\u0443\u043a\u0446\u0438\u0438"
+)
+YEAR_1980_HEAD_RU = "1980 \u0433."  # 1980 g., a year printed with its abbreviation for "year"
+TRANSCAUCASIA_RU = "\u0417\u0430\u043a\u0430\u0432\u043a\u0430\u0437\u044c\u0435"  # Zakavkaz'e
+GEORGIA_RU = "\u0413\u0440\u0443\u0437\u0438\u043d\u0441\u043a\u0430\u044f \u0421\u0421\u0420"  # Gruzinskaia SSR
+ARMENIA_RU = (
+    "\u0410\u0440\u043c\u044f\u043d\u0441\u043a\u0430\u044f \u0421\u0421\u0420"  # Armianskaia SSR
+)
 GEORGIA_KA = (
     "\u10e1\u10d0\u10e5\u10d0\u10e0\u10d7\u10d5\u10d4\u10da\u10dd"  # Sakartvelo, Georgian script
 )
 
 #: Every unit of the Uzbek SSR, as Russian tables print it, as the Uzbek-language press prints it,
-#: and in the Latin spellings a transcriber or a source might use: this project's translit, ISO 9
-#: and scholarly (with their diacritics), English, and Uzbek Latin.
+#: and in several Latin spellings a transcriber or a source might use, ISO 9 and the scholarly
+#: system (with their diacritics) among them. Every unit is also spelled as the abbreviation a
+#: tight table prints in Russian (``Andizh. obl.``). The first spelling is the full Russian name.
 UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
     "Uzbek SSR": (
         UZBEK_RU,
@@ -280,6 +292,7 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "\u0423\u0437\u0431. \u0421\u0421\u0420",  # Uzb. SSR
         "Uzbekskaya SSR",
         "Uzbekskaja SSR",
+        "Uzbekska\u00e2 SSR",  # ISO 9
         "Narodnoe khoziaistvo Uzbekskoi SSR",
         "O'zbekiston SSR",
         "O\u02bbzbekiston",
@@ -293,6 +306,12 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Kara-Kalpak ASSR",
         "Qoraqalpog'iston",
         "Karakalpakstan",
+        "\u041a\u0430\u0440\u0430\u043a\u0430\u043b\u043f. \u0410\u0421\u0421\u0420",  # Karakalp. ASSR
+        "\u041a\u041a\u0410\u0421\u0421\u0420",  # KKASSR
+        "Karakalp. ASSR",
+        "KK ASSR",
+        "Karakalpakskaja ASSR",
+        "Karakalpakska\u00e2 ASSR",  # ISO 9
     ),
     "Andijan oblast": (
         "\u0410\u043d\u0434\u0438\u0436\u0430\u043d\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -302,6 +321,8 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Andijan",
         "Andijon viloyati",
         "Andidjan",
+        "\u0410\u043d\u0434\u0438\u0436. \u043e\u0431\u043b.",  # Andizh. obl.
+        "Andi\u017eanska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Bukhara oblast": (
         "\u0411\u0443\u0445\u0430\u0440\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -311,6 +332,8 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Buxarskaja oblast\u02b9",
         "Bukhara",
         "Buxoro viloyati",
+        "\u0411\u0443\u0445. \u043e\u0431\u043b.",  # Bukh. obl.
+        "Buharska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Jizzakh oblast": (
         "\u0414\u0436\u0438\u0437\u0430\u043a\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -320,6 +343,8 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Jizzakh",
         "Jizzax viloyati",
         "Djizak",
+        "\u0414\u0436\u0438\u0437\u0430\u043a. \u043e\u0431\u043b.",  # Dzhizak. obl.
+        "D\u017eizakska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Kashkadarya oblast": (
         "\u041a\u0430\u0448\u043a\u0430\u0434\u0430\u0440\u044c\u0438\u043d\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -328,6 +353,8 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Ka\u0161kadar\u02b9inskaja oblast\u02b9",
         "Kashka-Darya",
         "Qashqadaryo viloyati",
+        "\u041a\u0430\u0448\u043a\u0430\u0434. \u043e\u0431\u043b.",  # Kashkad. obl.
+        "Ka\u0161kadar\u02b9inska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Khorezm oblast": (
         "\u0425\u043e\u0440\u0435\u0437\u043c\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -337,12 +364,17 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Xorezmskaja oblast\u02b9",
         "Khwarazm",
         "Xorazm viloyati",
+        "\u0425\u043e\u0440\u0435\u0437\u043c. \u043e\u0431\u043b.",  # Khorezm. obl.
+        "Horezmska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Namangan oblast": (
         "\u041d\u0430\u043c\u0430\u043d\u0433\u0430\u043d\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
         "\u041d\u0430\u043c\u0430\u043d\u0433\u0430\u043d \u0432\u0438\u043b\u043e\u044f\u0442\u0438",
         "Namanganskaya oblast",
         "Namangan viloyati",
+        "\u041d\u0430\u043c\u0430\u043d\u0433. \u043e\u0431\u043b.",  # Namang. obl.
+        "Namanganskaja oblast\u02b9",
+        "Namanganska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Navoi oblast": (
         "\u041d\u0430\u0432\u043e\u0438\u0439\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -350,12 +382,18 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Navoiyskaya oblast",
         "Navoi",
         "Navoiy viloyati",
+        "\u041d\u0430\u0432\u043e\u0438\u0439\u0441\u043a. \u043e\u0431\u043b.",  # Navoiisk. obl.
+        "Navoijskaja oblast\u02b9",
+        "Navoijska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Samarkand oblast": (
         "\u0421\u0430\u043c\u0430\u0440\u043a\u0430\u043d\u0434\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
         "\u0421\u0430\u043c\u0430\u0440\u049b\u0430\u043d\u0434 \u0432\u0438\u043b\u043e\u044f\u0442\u0438",
         "Samarkandskaya oblast",
         "Samarqand viloyati",
+        "\u0421\u0430\u043c\u0430\u0440\u043a. \u043e\u0431\u043b.",  # Samark. obl.
+        "Samarkandskaja oblast\u02b9",
+        "Samarkandska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Surkhandarya oblast": (
         "\u0421\u0443\u0440\u0445\u0430\u043d\u0434\u0430\u0440\u044c\u0438\u043d\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -364,6 +402,8 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Surhandar\u02b9inskaja oblast\u02b9",
         "Surxandar\u02b9inskaja oblast\u02b9",
         "Surxondaryo viloyati",
+        "\u0421\u0443\u0440\u0445\u0430\u043d\u0434. \u043e\u0431\u043b.",  # Surkhand. obl.
+        "Surhandar\u02b9inska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Syrdarya oblast": (
         "\u0421\u044b\u0440\u0434\u0430\u0440\u044c\u0438\u043d\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -371,6 +411,9 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Syrdar'inskaya oblast",
         "Syr-Darya",
         "Sirdaryo viloyati",
+        "\u0421\u044b\u0440\u0434\u0430\u0440. \u043e\u0431\u043b.",  # Syrdar. obl.
+        "Syrdar\u02b9inskaja oblast\u02b9",
+        "Syrdar\u02b9inska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Tashkent oblast and city": (
         "\u0433. \u0422\u0430\u0448\u043a\u0435\u043d\u0442",
@@ -378,6 +421,8 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Tashkentskaya oblast",
         "Ta\u0161kentskaja oblast\u02b9",
         "g. Tashkent",
+        "\u0422\u0430\u0448\u043a. \u043e\u0431\u043b.",  # Tashk. obl.
+        "Ta\u0161kentska\u00e2 oblast\u02b9",  # ISO 9
     ),
     "Fergana oblast": (
         "\u0424\u0435\u0440\u0433\u0430\u043d\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",
@@ -386,11 +431,15 @@ UZBEK_SSR_IN_PRINT: dict[str, tuple[str, ...]] = {
         "Ferghana",
         "Farg'ona viloyati",
         "Farg\u02bbona viloyati",
+        "\u0424\u0435\u0440\u0433. \u043e\u0431\u043b.",  # Ferg. obl.
+        "Ferganskaja oblast\u02b9",
+        "Ferganska\u00e2 oblast\u02b9",  # ISO 9
     ),
 }
 
 #: The other fourteen republics and the union, in Russian, and places that are not the anchor
-#: but sit next to it on a map or in a string.
+#: but sit next to it on a map or in a string: oblasts of the neighbouring republics among them,
+#: so that the short stems the seal matches on are seen not to reach across a border.
 NOT_THE_ANCHOR_IN_PRINT: tuple[str, ...] = (
     USSR_RU,
     "\u0420\u0421\u0424\u0421\u0420",  # RSFSR
@@ -411,6 +460,9 @@ NOT_THE_ANCHOR_IN_PRINT: tuple[str, ...] = (
     "Turkmen SSR",
     "Tadzhikskaya SSR",
     "Kuzbass",  # holds "uz" and "uzb" inside a word, which must not count
+    "\u0422\u0430\u0448\u0430\u0443\u0437\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",  # Tashauzskaia oblast, Turkmen SSR, beside Khorezm
+    "\u041b\u0435\u043d\u0438\u043d\u0430\u0431\u0430\u0434\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",  # Leninabadskaia oblast, Tajik SSR, in the Fergana valley
+    "\u041e\u0448\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c",  # Oshskaia oblast, Kirgiz SSR, in the Fergana valley
 )
 
 _SYNTHETIC_UNION_VOLUME = "SYNTHETIC FIXTURE, Narodnoe khoziaistvo SSSR"
@@ -851,6 +903,134 @@ def test_a_transcription_with_a_blank_stub_is_refused(sealed):
         filter_sealed(df)
 
 
+_SCHEMA_COLUMNS = {"region_col": "row_label", "series_col": "title_ru", "year_col": "period"}
+
+
+def numbered_rows(
+    period: str,
+    *,
+    column_label: str | None = None,
+    volume: str = _SYNTHETIC_UNION_VOLUME,
+    title_ru: str = RAW_COTTON_TITLE_RU,
+    title_translit: str = "Proizvodstvo khlopka-syrtsa",
+) -> pd.DataFrame:
+    """The right-hand page of a two-page table, raw cotton unless a heading is given: its rows
+    are numbered 1 to 5, where the left-hand page printed their names. Values are fake."""
+    cells = [
+        {
+            "row_label": str(number),
+            "column_label": column_label or period,
+            "period": period,
+            "value_raw": "1",
+        }
+        for number in range(1, 6)
+    ]
+    return as_frame(
+        transcription_rows(cells, title_ru=title_ru, title_translit=title_translit, volume=volume)
+    )
+
+
+@pytest.mark.parametrize("columns", [{}, _SCHEMA_COLUMNS], ids=["schema", "named"])
+@pytest.mark.parametrize(
+    ("period", "column_label"),
+    [
+        ("1980", None),
+        ("1976-1980", None),
+        ("1984/85", None),
+        ("1980", YEAR_1980_HEAD_RU),  # a column head with letters, which names no region either
+    ],
+)
+def test_numbered_rows_under_a_cotton_heading_refuse_the_frame(
+    sealed, period, column_label, columns
+):
+    """A row number names no region, and a heading that names no region cannot show that a
+    row is somewhere else. Row 3 may be the Uzbek SSR, so the frame is refused."""
+    df = numbered_rows(period, column_label=column_label)
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        held_out_mask(df, **columns)
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        filter_sealed(df, **columns)
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        check_grouping(df, "row_label", **columns)
+    _, n = filter_sealed(df, declare_clean=True)
+    assert n == 0
+
+
+def test_numbered_rows_outside_the_window_need_nothing_more(sealed):
+    df = numbered_rows("1990")
+    out, n = filter_sealed(df)
+    assert n == 0
+    assert len(out) == 5
+    check_grouping(df, "row_label")
+
+
+def test_numbered_rows_refuse_the_frame_under_any_heading(sealed):
+    """The cost of failing closed, pinned so that it is chosen and not discovered. A row number
+    may stand for a product as well as a region, and the seal cannot tell a heading that names
+    one product from one that names a group of them, so even a grain heading does not rule a
+    numbered row out."""
+    df = numbered_rows("1980", title_ru=GRAIN_TITLE_RU, title_translit="Proizvodstvo zerna")
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        filter_sealed(df)
+    _, n = filter_sealed(df, declare_clean=True)
+    assert n == 0
+
+
+def test_numbered_rows_in_the_republic_annual_are_withheld_not_refused(sealed):
+    """The volume names the republic and the heading names cotton, so the row numbers do not
+    need to say anything."""
+    df = numbered_rows(
+        "1980", volume="SYNTHETIC FIXTURE, Narodnoe khoziaistvo Uzbekskoi SSR v 1980 g."
+    )
+    out, n = filter_sealed(df)
+    assert n == 5
+    assert out.empty
+
+
+def test_a_heading_or_volume_never_rules_the_region_out(sealed):
+    """Stubs that are only the cell's year name no region. The heading names cotton and the
+    volume is the union's, but neither says which region each cell is, and a table that names
+    no region may be the anchor's own."""
+    cells = [
+        {"row_label": period, "column_label": period, "period": period, "value_raw": "1"}
+        for period in ("1975", "1980", "1990")
+    ]
+    df = as_frame(transcription_rows(cells))
+    for columns in ({}, _SCHEMA_COLUMNS):
+        with pytest.raises(SealedError, match="cannot tell whether this frame"):
+            filter_sealed(df, **columns)
+        with pytest.raises(SealedError, match="cannot tell whether this frame"):
+            check_grouping(df, "row_label", **columns)
+    out, n = filter_sealed(df.loc[df["period"] != "1980"])
+    assert n == 0
+    assert len(out) == 2
+
+
+def test_an_item_code_under_a_heading_that_names_no_product_refuses_the_frame(sealed):
+    """Republics as rows and products as numbered columns: column 328 may be cotton, and
+    neither the heading, which names no product, nor a republic's name rules that out."""
+    cells = [
+        {"row_label": label, "column_label": code, "period": "1980", "value_raw": "1"}
+        for label in (UZBEK_RU, TURKMEN_RU)
+        for code in ("327", "328")
+    ]
+    df = as_frame(
+        transcription_rows(
+            cells,
+            title_ru=MAIN_PRODUCTS_TITLE_RU,
+            title_translit="Proizvodstvo vazhneishikh vidov produktsii",
+        )
+    )
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        filter_sealed(df)
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        filter_sealed(df, **_SCHEMA_COLUMNS)
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        check_grouping(df, "row_label")
+    with pytest.raises(SealedError, match="cannot tell whether this frame"):
+        check_grouping(df, ["row_label", "column_label"])
+
+
 def test_unreadable_rows_still_count_as_not_held_out_once_unsealed(unsealed):
     df = pd.DataFrame(
         {"region": [GEORGIA_KA, "Uzbek SSR"], "series": ["cotton"] * 2, "year": [1980] * 2}
@@ -884,6 +1064,40 @@ def test_a_subtotal_that_holds_the_anchor_goes_with_it(sealed):
     assert n == 3
     assert set(out.loc[out["period"] == "1980", "row_label"]) == {TURKMEN_RU}
     assert len(out.loc[out["period"] == "1975"]) == 4
+
+
+def test_every_subtotal_in_the_anchors_column_goes_another_groups_too(sealed):
+    """The roles say which cells are totals, not which cells each one sums. So the
+    Transcaucasian subtotal goes with the Central Asian one, and is counted in n_withheld."""
+    cells = []
+    for period in ("1975", "1980"):
+        for label, role, value in (
+            (USSR_RU, "total", "4"),
+            (CENTRAL_ASIA_RU, "subtotal", "2"),
+            (UZBEK_RU, "data", "1"),
+            (TURKMEN_RU, "data", "1"),
+            (TRANSCAUCASIA_RU, "subtotal", "2"),
+            (GEORGIA_RU, "data", "1"),
+            (ARMENIA_RU, "data", "1"),
+        ):
+            cells.append(
+                {
+                    "row_label": label,
+                    "column_label": period,
+                    "period": period,
+                    "value_raw": value,
+                    "row_role": role,
+                }
+            )
+    df = as_frame(transcription_rows(cells))
+    out, n = filter_sealed(df)
+    assert n == 4
+    assert set(out.loc[out["period"] == "1980", "row_label"]) == {
+        TURKMEN_RU,
+        GEORGIA_RU,
+        ARMENIA_RU,
+    }
+    assert len(out.loc[out["period"] == "1975"]) == 7
 
 
 def test_a_table_whose_roles_are_unknown_loses_the_whole_period(sealed):
