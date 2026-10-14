@@ -95,6 +95,12 @@ def proxy_elasticities(
     fixed effects is the default in this literature, but electricity is only available for
     selected years per yearbook edition, so the estimation sample is irregular and the
     estimator has to handle that rather than interpolating across the gaps.
+
+    What this is not: an input to the variance floor. These proxies are indicators of output,
+    not drivers of it, and a floor built from an elasticity of product on a proxy has the
+    wrong size: it rejects honest provinces at a rate set by the proxy's own noise, and when
+    the elasticity is fitted by least squares on the tested growth it can never reject.
+    :func:`china.analysis.dispersion.proxy_implied_floor` says why and what it takes instead.
     """
     raise NotImplementedError(
         "needs an extracted panel; and the irregular year coverage of the electricity table "
