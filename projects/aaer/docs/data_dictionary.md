@@ -239,11 +239,29 @@ Arithmetic on the counts recorded in `SOURCES.yaml`, not a result of any analysi
 2. **The zeros are not zeros.** An unflagged firm-year is one nobody charged, not one that was
    clean. Treating the 145,081 as negatives tells a classifier that every undetected
    misstatement is an example of honesty. Use the positive-unlabeled formulation
-   (`forensics_core.labels.pu`); this project's `Dataset` objects encode unlabeled rows as
-   `NaN`, not 0.
+   (`forensics_core.labels.pu`). That is a choice of detector, not of label coding, and this
+   project's `Dataset` objects code `y` as follows:
+
+   | Firm-year | `y` | How the shared harness reads it |
+   |---|---|---|
+   | charged: an AAER names the violation year | 1 | confirmed distortion |
+   | nobody charged | 0 | presumed clean: `PUDetector` treats it as unlabeled, `SklearnDetector` as a negative |
+   | status cannot be known yet, e.g. inside the enforcement-lag horizon, where an AAER may still be issued | `NaN` | unlabeled: never scored, never in a calibration curve |
+
+   The 0 is the harness's own "presumed clean" (`forensics_core.eval.harness.Dataset`), and the
+   Bao et al. file codes the same rows the same way (`misstate = 0`). It costs the PU arm
+   nothing, because `PUDetector` builds the same labels from a 0 as from a `NaN`. Without it
+   nothing can be measured: `evaluate()` computes its metrics, and `transfer()` its calibration
+   curve, on the rows whose `y` is not `NaN`. Code every unflagged firm-year `NaN` and each of
+   those rows is a positive, so `evaluate()` finds no fold it can score and `transfer()` reports
+   precision 1.0 at every threshold without a warning. `NaN` is kept for firm-years whose status
+   genuinely cannot be known. The length of that horizon is still to be decided, and on the Bao
+   path a firm-year coded `NaN` instead of 0 departs from the published labels, which has to be
+   stated beside any comparison with the published figures.
 3. **Everything measured against these labels is prediction of enforcement**, not of
-   misstatement. Say so in every table. The gap between the two is precisely the quantity that
-   the `gosplan` project has no way to measure at all, which is why it is worth estimating here.
+   misstatement. Say so in every table, together with the fact that the unflagged firm-years
+   were scored as 0. The gap between the two is precisely the quantity that the `gosplan`
+   project has no way to measure at all, which is why it is worth estimating here.
 4. **The second row is the free SEC path.** Fewer positives, thinner base rate, and a different
    enforcement regime from the one the benchmark was built on.
 

@@ -6,9 +6,12 @@ The SEC pursues cases that are detectable, large and litigable. A model trained 
 learns *what gets prosecuted*, not *what happens*. Consequences:
 
 - Unflagged firm-years are **unlabeled, not negative**. Use `forensics_core.labels.pu`
-  (Elkan–Noto, bagging PU) rather than a classifier that treats them as clean.
+  (Elkan–Noto, bagging PU) rather than a classifier that treats them as clean. That is a
+  choice of detector: in `Dataset.y` they are still coded 0, the harness's "presumed clean",
+  which `PUDetector` reads as unlabeled. `NaN` is only for firm-years whose status cannot be
+  known yet (`data_dictionary.md` section 6).
 - Performance measured against AAER labels is performance at predicting enforcement.
-  Say so in every table.
+  Say so in every table, and say that the unflagged firm-years were scored as 0.
 
 ## 2. Base rate well under 1 %
 
